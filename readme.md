@@ -1,0 +1,2 @@
+- double descent nb alters training and tests on same test set
+- samples nb trains once and alters test set
