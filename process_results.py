@@ -2,14 +2,13 @@ import pandas as pd
 import numpy as np
 from os.path import join as oj
 from tqdm import tqdm
-import data, fit
+import data
 import os
 from os.path import join as oj
 import sys, time
 sys.path.insert(1, oj(sys.path[0], '..'))  # insert parent path
 import seaborn as sns
 from sklearn.model_selection import train_test_split
-from regression_dsets_large_names import regression_dsets_large_names
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import metrics
@@ -19,7 +18,6 @@ from copy import deepcopy
 import pickle as pkl
 import pandas as pd
 import data
-import fit
 
 
 def process_results(results):
@@ -98,7 +96,7 @@ def aggregate_results(results, group_idxs, out_dir):
                                              beta_type=p.beta_type, beta_norm=p.beta_norm, cov_param=p.cov_param)
                 y_true = y_true.reshape(1, -1) # 1 x n_test
             elif dset == 'pmlb':
-                dset_name = regression_dsets_large_names[dset_num]
+                dset_name = REGRESSION_DSETS_LARGE_NAMES[dset_num]
                 X, y = pmlb.fetch_data(dset_name, return_X_y=True)
                 fit.seed(703858704)
                 _, _, _, y_true = train_test_split(X, y) # get test set

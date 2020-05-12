@@ -8,7 +8,8 @@ from sklearn.model_selection import ShuffleSplit, StratifiedShuffleSplit
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.utils import shuffle
 from sklearn import metrics
-from regression_dsets_large_names import regression_dsets_large_names
+import data
+REGRESSION_DSETS_LARGE_NAMES = data.REGRESSION_DSETS_LARGE_NAMES
 from tqdm import tqdm
 import pickle as pkl
 from copy import deepcopy
@@ -16,10 +17,9 @@ import time
 import random
 from os.path import join as oj
 import os
-import data
 import viz
 import sys
-from params_save import S as S_save
+from params import S as S_save
 import pmlb
 from scipy.optimize import minimize
 import numpy.linalg as npl

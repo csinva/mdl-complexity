@@ -31,3 +31,24 @@ class p:
     def _str(self):
         vals = vars(p)
         return 'pid=' + vals['pid'] + 'dset=' + str(vals['dset'])
+    
+class S:   
+    def __init__(self, p):
+        
+        self.mean_max_corrs = {} # dict containing max_corrs, W_norms, mean_class_act
+        # {mean_max_corrs: {it: {'fc.0.weight': val}}}
+        
+        # accs / losses
+        self.train_mse = []
+        self.test_mse = []
+        self.wnorm = []
+        self.pseudo_trace = []
+        self.cov_trace = []
+        self.nuclear_norm = []
+        self.H_trace = []
+        self.lambda_opt = None
+        
+    
+    # dictionary of everything but weights
+    def _dict(self):
+        return {attr: val for (attr, val) in vars(self).items()}
