@@ -43,7 +43,6 @@ def fit(p):
     s = S_save(p)
     
     
-    
     #################################################################### DATA ##############################################################
     
     # testing data should always be generated with the same seed

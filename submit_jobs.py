@@ -4,10 +4,10 @@ import numpy as np
 from copy import deepcopy
 partition = 'low'
 
-OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may11/'
+OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may14/'
 PARAMS_BASE = {
     'out_dir': [OUT_BASE + 'test'],
-    'seed': range(0, 2),    
+    'seed': range(0, 3),    
     'num_features': [500],    
 #     'n_train_over_num_features': [1e-2, 1e-1, 0.75, 0.9, 1, 1.5, 5, 7.5, 2e1, 4e1],
     'n_train_over_num_features': [1e-2, 5e-2, 1e-1, 0.5, 0.75, 0.9, 1, 1.2, 1.5, 2, 5, 7.5, 1e1, 2e1, 4e1, 1e2],    
@@ -21,7 +21,7 @@ PARAMS_BASE = {
     'beta_type': ['gaussian'], # one_hot, gaussian
     'noise_distr': ['gaussian'], # gaussian, t, gaussian_scale_var, thresh
     'noise_std': [1e-1], #0.001],
-    'model_type': ['mdl_orig', 'mdl_m1', 'ridge'], #'mdl', linear_sta', 'ridge', 'ols', 'lasso'],      
+    'model_type': ['ols', 'mdl_orig', 'mdl_m1', 'ridge'], #'mdl', linear_sta', 'ridge', 'ols', 'lasso'],      
     'reg_param': [0, 1e-2, 1e-1, 1, 1e1, -1], # make sure to always have reg_param 0!, 
 }
 
@@ -31,7 +31,8 @@ PARAMS_IID = {
 }
 PARAMS_DECAY = {
     'out_dir': [OUT_BASE + 'decay'],
-    'iid': ['decay']
+    'iid': ['decay'],
+    'cov_param': [2]
 }
 PARAMS_CLUSTERED = {
     'out_dir': [OUT_BASE + 'clustered'],
