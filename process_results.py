@@ -18,6 +18,8 @@ from copy import deepcopy
 import pickle as pkl
 import pandas as pd
 import data
+REGRESSION_DSETS_LARGE_NAMES = data.REGRESSION_DSETS_LARGE_NAMES
+import fit
 
 
 def process_results(results):
@@ -150,7 +152,7 @@ def aggregate_results(results, group_idxs, out_dir):
 # all_linear_vary_noise_distr
 # all_linear_pmlb
 if __name__ == '__main__':
-    out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may14'
+    out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may21'
     for folder in tqdm(sorted(os.listdir(out_dir))):
         folder_path = oj(out_dir, folder)
         if not 'processed.pkl' in os.listdir(folder_path):
