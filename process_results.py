@@ -66,8 +66,10 @@ def aggregate_results(results, group_idxs, out_dir):
     r2 = results.groupby(group_idxs)
     ind = pd.MultiIndex.from_tuples(r2.indices, names=group_idxs)
     df = pd.DataFrame(index=ind)
+    
+    # keys to record
     keys = ['ratio', 'bias', 'var', 'wnorm', 'mse_train', 'mse_test', 'num_nonzero',
-            'mse_noiseless', 'df1', 'df2', 'df3']
+            'mse_noiseless', 'df1', 'df2', 'df3', 'n_train']
     for key in keys:
         df[key] = None
     for name, gr in tqdm(r2):
@@ -120,6 +122,7 @@ def aggregate_results(results, group_idxs, out_dir):
 #             print('bias', bias, 'var', var, 'mse', mse_noiseless, 'comb', bias**2 + var)
 
             row['ratio'].append(gr2.num_features.values[0] / gr2.n_train.values[0])
+            row['n_train'].append(gr2.n_train.values[0])
             row['bias'].append(bias)
             row['var'].append(var)
             row['wnorm'].append(gr2.wnorm.mean())
@@ -152,7 +155,7 @@ def aggregate_results(results, group_idxs, out_dir):
 # all_linear_vary_noise_distr
 # all_linear_pmlb
 if __name__ == '__main__':
-    out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22'
+    out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22_3'
     for folder in tqdm(sorted(os.listdir(out_dir))):
         folder_path = oj(out_dir, folder)
         if not 'processed.pkl' in os.listdir(folder_path):
@@ -164,7 +167,7 @@ if __name__ == '__main__':
 
 
 
-            group_idxs = ['dset', 'dset_num',
+            group_idxs = ['dset', 'dset_num', 'dset_name',
                           'beta_type', 'model_type', 'reg_param',
                           'beta_norm',
                           'noise_std', 'noise_distr', 'iid',  'cov_param',# dset

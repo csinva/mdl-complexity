@@ -4,10 +4,10 @@ import numpy as np
 from copy import deepcopy
 partition = 'low'
 
-OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22_2/'
+OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22_3/'
 PARAMS_BASE = {
     'out_dir': [OUT_BASE + 'test'],
-    'seed': range(0, 3),    
+    'seed': range(5),    
     'num_features': [500],    
 #     'n_train_over_num_features': [1e-2, 1e-1, 0.75, 0.9, 1, 1.5, 5, 7.5, 2e1, 4e1],
     'n_train_over_num_features': [5e-3, 1e-2, 5e-2, 1e-1, 0.5, 0.75, 0.9, 1, 1.2, 1.5, 2, 5, 7.5, 1e1, 2e1, 4e1, 1e2],    
@@ -58,7 +58,8 @@ PARAMS_PMLBS = [
     {
         'out_dir': [OUT_BASE + f'pmlb{i}'],
         'dset': ['pmlb'],
-        'dset_num': [i]
+        'dset_num': [i],
+        'noise_std': [1]
     } for i in range(0, 40) # 58 in total
 ]
 

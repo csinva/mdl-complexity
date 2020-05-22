@@ -47,7 +47,7 @@ class S:
         self.nuclear_norm = []
         self.H_trace = []
         self.lambda_opt = None
-        
+        self.dset_name = None
     
     # dictionary of everything but weights
     def _dict(self):

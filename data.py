@@ -20,6 +20,13 @@ from scipy.stats import random_correlation
 from scipy.stats import t
 
 # datasets with at least 15 features
+REGRESSION_DSETS_LARGE_NAMES_RECOGNIZABLE = ['1028_SWD', '1201_BNG_breastTumor', '192_vineyard', '201_pol', '210_cloud', '215_2dplanes', '1029_LEV', '218_house_8L', '225_puma8NH', '228_elusage', '229_pwLinear', '230_machine_cpu', '294_satellite_image', '344_mv', '4544_GeographicalOriginalofMusic', '1030_ERA', '519_vinnie', '522_pm10', '523_analcatdata_neavote', '527_analcatdata_election2000', '529_pollen', '537_houses', '542_pollution', '1096_FacultySalaries', '1191_BNG_pbc', '1193_BNG_lowbwt', '1196_BNG_pharynx', '1199_BNG_echoMonths']
+
+DSETS_RENAMED = {
+    '1028_SWD': 'Social Workers Decisions',
+    
+}
+                               
 REGRESSION_DSETS_LARGE_NAMES = ['1027_ESL', '1028_SWD', '1029_LEV', '1030_ERA', '1089_USCrime', '1096_FacultySalaries', '1191_BNG_pbc', '1193_BNG_lowbwt', '1196_BNG_pharynx', '1199_BNG_echoMonths', '1201_BNG_breastTumor', '1203_BNG_pwLinear', '1595_poker', '192_vineyard', '195_auto_price', '197_cpu_act', '201_pol', '207_autoPrice', '210_cloud', '215_2dplanes', '218_house_8L', '225_puma8NH', '227_cpu_small', '228_elusage', '229_pwLinear', '230_machine_cpu', '294_satellite_image', '344_mv', '4544_GeographicalOriginalofMusic', '485_analcatdata_vehicle', '503_wind', '505_tecator', '519_vinnie', '522_pm10', '523_analcatdata_neavote', '527_analcatdata_election2000', '529_pollen', '537_houses', '542_pollution', '547_no2', '556_analcatdata_apnea2', '557_analcatdata_apnea1', '560_bodyfat', '561_cpu', '562_cpu_small', '564_fried', '573_cpu_act', '574_house_16H', '659_sleuth_ex1714', '663_rabe_266', '665_sleuth_case2002', '666_rmftsa_ladata', '678_visualizing_environmental', '687_sleuth_ex1605', '690_visualizing_galaxy', '695_chatfield_4', '706_sleuth_case1202', '712_chscase_geyser1']
 
 REGRESSION_DSETS_LARGEST_OLD = ['1191_BNG_pbc', '195_auto_price', '197_cpu_act', '201_pol', '207_autoPrice', '294_satellite_image', '4544_GeographicalOriginalofMusic', '505_tecator', '542_pollution', '573_cpu_act', '574_house_16H', '581_fri_c3_500_25', '582_fri_c1_500_25', '583_fri_c1_1000_50', '584_fri_c4_500_25', '586_fri_c3_1000_25', '588_fri_c4_1000_100', '589_fri_c2_1000_25', '590_fri_c0_1000_50', '592_fri_c4_1000_25', '598_fri_c0_1000_25', '603_fri_c0_250_50', '605_fri_c2_250_25', '607_fri_c4_1000_50', '616_fri_c4_500_50', '618_fri_c3_1000_50', '620_fri_c1_1000_25', '622_fri_c2_1000_50', '626_fri_c2_500_50', '633_fri_c0_500_25', '637_fri_c1_500_50', '643_fri_c2_500_25', '644_fri_c4_250_25', '645_fri_c3_500_50', '648_fri_c1_250_50', '650_fri_c0_500_50', '651_fri_c0_100_25', '653_fri_c0_250_25', '658_fri_c3_250_25']
