@@ -4,7 +4,7 @@ import numpy as np
 from copy import deepcopy
 partition = 'low'
 
-OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22/'
+OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22_2/'
 PARAMS_BASE = {
     'out_dir': [OUT_BASE + 'test'],
     'seed': range(0, 3),    
@@ -59,7 +59,7 @@ PARAMS_PMLBS = [
         'out_dir': [OUT_BASE + f'pmlb{i}'],
         'dset': ['pmlb'],
         'dset_num': [i]
-    } for i in range(0, 25) # 58 in total
+    } for i in range(0, 40) # 58 in total
 ]
 
 

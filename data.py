@@ -47,13 +47,21 @@ def get_means_and_cov(num_vars, iid='clustered', cov_param=None):
         eigs = np.array([1/((i + 1) ** cov_param) for i in range(num_vars)])
         eigs = eigs * num_vars / eigs.sum()
         covs = random_correlation.rvs(eigs)
+    elif iid == 'mult_decay':
+        eigs = np.array([cov_param ** (i) for i in range(num_vars)])
+        eigs = eigs * num_vars / eigs.sum()
+        covs = random_correlation.rvs(eigs)
+    elif iid == 'lin_decay':
+        eigs = np.array([1/(cov_param ** i) for i in range(num_vars)])
+        eigs = eigs * num_vars / eigs.sum()
+        covs = random_correlation.rvs(eigs)
     return means, covs
 
 
 def get_X(n, p, iid, means=None, covs=None, cov_param=None):
     if iid == 'iid':
         X = np.random.randn(n, p)
-    elif iid in ['clustered', 'spike', 'decay']:
+    elif iid in ['clustered', 'spike', 'decay', 'mult_decay', 'lin_decay']:
         means, covs = get_means_and_cov(p, iid, cov_param)
         X = np.random.multivariate_normal(means, covs, (n,))
     else:
