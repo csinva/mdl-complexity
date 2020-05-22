@@ -4,7 +4,7 @@ from random import randint
 class p:
     seed = 15
     out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/double_descent/test'
-    dset = 'gaussian' # gaussian
+    dset = 'pmlb' # gaussian
     beta_type = 'gaussian' # one_hot
     beta_norm = 1
     iid = 'iid' # 'iid', 'clustered', 'spike', decay

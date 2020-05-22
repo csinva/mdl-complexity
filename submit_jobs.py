@@ -4,7 +4,7 @@ import numpy as np
 from copy import deepcopy
 partition = 'low'
 
-OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may14/'
+OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may21/'
 PARAMS_BASE = {
     'out_dir': [OUT_BASE + 'test'],
     'seed': range(0, 3),    
@@ -21,8 +21,8 @@ PARAMS_BASE = {
     'beta_type': ['gaussian'], # one_hot, gaussian
     'noise_distr': ['gaussian'], # gaussian, t, gaussian_scale_var, thresh
     'noise_std': [1e-1], #0.001],
-    'model_type': ['ols', 'mdl_orig', 'mdl_m1', 'ridge'], #'mdl', linear_sta', 'ridge', 'ols', 'lasso'],      
-    'reg_param': [0, 1e-2, 1e-1, 1, 1e1, -1], # make sure to always have reg_param 0!, 
+    'model_type': ['ols', 'mdl_m1', 'ridge'], #'mdl_orig', 'mdl_m1',linear_sta', 'ridge', 'ols', 'lasso'],      
+    'reg_param': [-1], # don't really need anything if you have -1, which is cv (must have -1!)
 }
 
 PARAMS_IID = {
@@ -50,9 +50,21 @@ PARAMS_SCALE_VAR = {
     'out_dir': [OUT_BASE + 'gaussian_scale_var'],
     'noise_distr': ['gaussian_scale_var']
 }
+PARAMS_SCALE_VAR = {
+    'out_dir': [OUT_BASE + 'gaussian_scale_var'],
+    'noise_distr': ['gaussian_scale_var']
+}
+PARAMS_PMLBS = [
+    {
+        'out_dir': [OUT_BASE + f'pmlb{i}'],
+        'dset': ['pmlb'],
+        'dset_num': [i]
+    } for i in range(1, 12)
+]
 
-for param_settings in [PARAMS_IID, PARAMS_DECAY, PARAMS_CLUSTERED,
-                       PARAMS_T, PARAMS_THRESH, PARAMS_SCALE_VAR]:
+
+for param_settings in PARAMS_PMLBS: #+ [PARAMS_IID, PARAMS_DECAY, PARAMS_CLUSTERED,
+                       #PARAMS_T, PARAMS_THRESH, PARAMS_SCALE_VAR]:
     params_to_vary = deepcopy(PARAMS_BASE)
     params_to_vary.update(param_settings)
     print(params_to_vary)
@@ -74,11 +86,11 @@ for param_settings in [PARAMS_IID, PARAMS_DECAY, PARAMS_CLUSTERED,
 
     params_full = []
     for t in param_combinations:
-        # remove reg_param for non-ridge and non-lasso
-        if t[i_reg_param] != 0 and not t[i_model_type] in ['ridge', 'lasso']:
+        # remove reg_param !=-1 for non-ridge and non-lasso
+        if t[i_reg_param] >= 0 and not t[i_model_type] in ['ridge', 'lasso']:
             pass
 
-        # remove reg_param = 0 for ridge and lasso
+        # remove reg_param == 0 for ridge and lasso
         elif t[i_reg_param] == 0 and t[i_model_type] in ['ridge', 'lasso']:
             pass
 

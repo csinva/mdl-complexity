@@ -56,9 +56,12 @@ def fit(p):
                                 beta_type=p.beta_type, beta_norm=p.beta_norm, 
                                 seed_for_training_data=p.seed, cov_param=p.cov_param)
     elif p.dset == 'pmlb':
-        s.dset_name = regression_dsets_large_names[p.dset_num]
+        s.dset_name = REGRESSION_DSETS_LARGE_NAMES[p.dset_num]
         seed(703858704)
         X, y = pmlb.fetch_data(s.dset_name, return_X_y=True)
+        # normalize the data
+        X = (X - np.mean(X, axis=1).reshape(-1, 1)) / np.std(X, axis=1).reshape(-1, 1)
+        y = (y - np.mean(y)) / np.std(y)
         X_train, X_test, y_train, y_test = train_test_split(X, y) # get test set
         seed(p.seed)
         X_train, y_train = shuffle(X_train, y_train)
@@ -127,7 +130,7 @@ def fit(p):
                     m = Ridge(fit_intercept=False, alpha=p.reg_param)
             
             m.fit(X_train, y_train)
-            if p.reg_param == -1:
+            if p.reg_param == -1 and p.model_type == 'ridge':
                 s.lambda_opt = m.alpha_
             s.w = m.coef_
         
