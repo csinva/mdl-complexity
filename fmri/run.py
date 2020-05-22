@@ -160,6 +160,7 @@ if __name__ == '__main__':
                 'd': d,
                 'y_norm': y_norm,
                 'mse_train': mse_train,
+                
                 'r2_train': r2_train,
                 'mse_test': mse,                
                 'r2_test': r2,

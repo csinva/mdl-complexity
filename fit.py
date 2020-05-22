@@ -9,7 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.utils import shuffle
 from sklearn import metrics
 import data
-REGRESSION_DSETS_LARGE_NAMES = data.REGRESSION_DSETS_LARGE_NAMES
+REGRESSION_DSETS_LARGE_NAMES = data.REGRESSION_DSETS_LARGE_NAMES_RECOGNIZABLE
 from tqdm import tqdm
 import pickle as pkl
 from copy import deepcopy
