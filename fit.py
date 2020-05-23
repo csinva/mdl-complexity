@@ -9,7 +9,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.utils import shuffle
 from sklearn import metrics
 import data
-REGRESSION_DSETS_LARGE_NAMES = data.REGRESSION_DSETS_LARGE_NAMES_RECOGNIZABLE
 from tqdm import tqdm
 import pickle as pkl
 from copy import deepcopy
@@ -56,7 +55,7 @@ def fit(p):
                                 beta_type=p.beta_type, beta_norm=p.beta_norm, 
                                 seed_for_training_data=p.seed, cov_param=p.cov_param)
     elif p.dset == 'pmlb':
-        s.dset_name = REGRESSION_DSETS_LARGE_NAMES[p.dset_num]
+        s.dset_name = data.REGRESSION_DSETS_LARGE_NAMES_RECOGNIZABLE[p.dset_num]
         seed(703858704)
         X, y = pmlb.fetch_data(s.dset_name, return_X_y=True)
         # normalize the data

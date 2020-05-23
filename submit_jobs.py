@@ -7,7 +7,7 @@ partition = 'low'
 OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22_3/'
 PARAMS_BASE = {
     'out_dir': [OUT_BASE + 'test'],
-    'seed': range(5),    
+    'seed': range(3),    
     'num_features': [500],    
 #     'n_train_over_num_features': [1e-2, 1e-1, 0.75, 0.9, 1, 1.5, 5, 7.5, 2e1, 4e1],
     'n_train_over_num_features': [5e-3, 1e-2, 5e-2, 1e-1, 0.5, 0.75, 0.9, 1, 1.2, 1.5, 2, 5, 7.5, 1e1, 2e1, 4e1, 1e2],    
@@ -25,6 +25,8 @@ PARAMS_BASE = {
     'reg_param': [-1], # don't really need anything if you have -1, which is cv (must have -1!)
 }
 
+
+# note: before may22_4, noise_std was 1e-1
 PARAMS_IID = {
     'out_dir': [OUT_BASE + 'iid'],
     'iid': ['iid'],
@@ -64,8 +66,9 @@ PARAMS_PMLBS = [
 ]
 
 
-for param_settings in PARAMS_PMLBS: #+ [PARAMS_IID, PARAMS_DECAY, PARAMS_CLUSTERED,
-                       #PARAMS_T, PARAMS_THRESH, PARAMS_SCALE_VAR]:
+ALL_PARAMS = [PARAMS_IID, PARAMS_DECAY, PARAMS_CLUSTERED,
+              PARAMS_T, PARAMS_THRESH, PARAMS_SCALE_VAR] #+ PARAMS_PMLBS
+for param_settings in ALL_PARAMS:
     params_to_vary = deepcopy(PARAMS_BASE)
     params_to_vary.update(param_settings)
     print(params_to_vary)

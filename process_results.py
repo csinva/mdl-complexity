@@ -18,7 +18,6 @@ from copy import deepcopy
 import pickle as pkl
 import pandas as pd
 import data
-REGRESSION_DSETS_LARGE_NAMES = data.REGRESSION_DSETS_LARGE_NAMES
 import fit
 
 
@@ -100,7 +99,7 @@ def aggregate_results(results, group_idxs, out_dir):
                                              beta_type=p.beta_type, beta_norm=p.beta_norm, cov_param=p.cov_param)
                 y_true = y_true.reshape(1, -1) # 1 x n_test
             elif dset == 'pmlb':
-                dset_name = REGRESSION_DSETS_LARGE_NAMES[dset_num]
+                dset_name = data.REGRESSION_DSETS_LARGE_NAMES_RECOGNIZABLE[dset_num]
                 X, y = pmlb.fetch_data(dset_name, return_X_y=True)
                 fit.seed(703858704)
                 _, _, _, y_true = train_test_split(X, y) # get test set

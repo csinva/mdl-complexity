@@ -77,21 +77,21 @@ if __name__ == '__main__':
     '''
     feats_name = oj(out_dir, f'out_st{suffix}{norm}.h5')
     feats_test_name = oj(out_dir, f'out_sv{suffix}{norm}.h5')
-    X = np.array(h5py.File(feats_name, 'r')['data'])
-    X = X.reshape(X.shape[0], -1)
+    X_train = np.array(h5py.File(feats_name, 'r')['data'])
+    X_train = X_train.reshape(X_train.shape[0], -1)
     print('shape, Y.shape', Y.shape)
     X_test = np.array(h5py.File(feats_test_name, 'r')['data'])
     X_test = X_test.reshape(X_test.shape[0], -1)
     '''
-    X = np.array(loadmat(oj(out_dir, 'mot_energy_feats_st.mat'))['S_fin'])
+    X_train = np.array(loadmat(oj(out_dir, 'mot_energy_feats_st.mat'))['S_fin'])
     X_test = np.array(loadmat(oj(out_dir, 'mot_energy_feats_sv.mat'))['S_fin'])
     
     '''
     resps_name = oj(out_dir, 'VoxelResponses_subject1.mat')
-    Y = np.array(tables.open_file(resps_name).get_node(f'/rt')[:]) # training responses: 73728 (voxels) x 7200 (timepoints)
+    Y_train = np.array(tables.open_file(resps_name).get_node(f'/rt')[:]) # training responses: 73728 (voxels) x 7200 (timepoints)
     Y_test = np.array(tables.open_file(resps_name).get_node(f'/rv')[:]) 
     '''
-    Y = load_h5(oj(out_dir, 'rt_norm.h5')) # training responses: 73728 (voxels) x 7200 (timepoints)    
+    Y_train = load_h5(oj(out_dir, 'rt_norm.h5')) # training responses: 73728 (voxels) x 7200 (timepoints)    
     Y_test = load_h5(oj(out_dir, 'rv_norm.h5') )
     sigmas = load_h5(oj(out_dir, f'out_rva_sigmas.h5'))
     (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy.pkl'), 'rb'))
@@ -104,32 +104,42 @@ if __name__ == '__main__':
         print('fitting', roi, 'idx', i)
 
         # load stuff
-        y = Y[i]
+        y_train = Y_train[i]
         y_test = Y_test[i]
-        w = U.T @ y
+        w = U.T @ y_train
         sigma = sigmas[i]
         var = sigma**2
 
         # ignore voxels w/ missing vals
-        idxs_cv = ~np.isnan(y)
+        idxs_cv = ~np.isnan(y_train)
         idxs_test = ~np.isnan(y_test)
-        n = np.sum(idxs_cv)
+        n_train = np.sum(idxs_cv)
         num_test = np.sum(idxs_test)
-        d = X.shape[1]
+        d = X_train.shape[1]
         d_n_min = min(n, d)
 
-        if n == y.size and num_test == y_test.size: 
+        if n_train == y_train.size and num_test == y_test.size: 
             m = RidgeCV(alphas=[1e3, 2.5e3, 5e3, 7.5e3, 1e4, 2.5e4, 5e4, 
                                 7.5e4, 1e5, 2.5e5, 5e5, 7.5e5, 1e6])
-            m.fit(X, y)
-            preds_train = m.predict(X)
+            
+            r = {
+                'roi': roi,
+                'idx': i,                
+                'model': m,
+                'n_train': n_train
+            }            
+            
+            m.fit(X_train, y_train)
+            preds_train = m.predict(X_train)
             preds = m.predict(X_test)
-            mse_train = metrics.mean_squared_error(y, preds_train)
-            r2_train = metrics.r2_score(y, preds_train)
+            mse_train = metrics.mean_squared_error(y_train, preds_train)
+            r2_train = metrics.r2_score(y_train, preds_train)
             mse = metrics.mean_squared_error(y_test, preds)
             r2 = metrics.r2_score(y_test, preds)
             corr = np.corrcoef(y_test, preds)[0, 1]
     #                 print('w', npl.norm(w), 'y', npl.norm(y), 'var', var)
+    
+            '''
             term1 = 0.5 * (npl.norm(y) ** 2 - npl.norm(w) ** 2) / var
             term2 = 0.5 * np.sum([np.log(1 + w[i]**2 / var) for i in range(d_n_min)])
             complexity1 = term1 + term2
@@ -142,8 +152,9 @@ if __name__ == '__main__':
             
             snr = (npl.norm(y) ** 2 - n * var) / (n * var)
             y_norm = npl.norm(y)
-            
+            '''
 
+            '''
             results = {
                 'roi': roi,
                 'model': m,
@@ -159,12 +170,12 @@ if __name__ == '__main__':
                 'n_test': num_test,
                 'd': d,
                 'y_norm': y_norm,
-                'mse_train': mse_train,
-                
+                'mse_train': mse_train, 
                 'r2_train': r2_train,
                 'mse_test': mse,                
                 'r2_test': r2,
                 'corr_test': corr,
                 'idx': i
             }
-            pkl.dump(results, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
+            '''
+            pkl.dump(r, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
