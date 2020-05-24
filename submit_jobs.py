@@ -20,13 +20,12 @@ PARAMS_BASE = {
     'cov_param': [2], #np.linspace(0, 4, 5),
     'beta_type': ['gaussian'], # one_hot, gaussian
     'noise_distr': ['gaussian'], # gaussian, t, gaussian_scale_var, thresh
-    'noise_std': [1e-1], #0.001],
+    'noise_std': [1e-1], # 1.0
     'model_type': ['ols', 'mdl_m1', 'ridge'], #'mdl_orig', 'mdl_m1',linear_sta', 'ridge', 'ols', 'lasso'],      
     'reg_param': [-1], # don't really need anything if you have -1, which is cv (must have -1!)
 }
 
 
-# note: before may22_4, noise_std was 1e-1
 PARAMS_IID = {
     'out_dir': [OUT_BASE + 'iid'],
     'iid': ['iid'],

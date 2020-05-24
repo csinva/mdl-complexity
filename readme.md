@@ -5,6 +5,8 @@ Official code for using / reproducing MDL-COMP from the paper "Rethinking comple
 - simple quickstart can be found in the 2 explore notebooks
 - running more in-depth experiments requires calling `submit_jobs.py`, then analyzing the results using the 2 analyze notebooks
 
+![](https://csinva.github.io/mdl-complexity/results/fig_iid_mse.svg)
+
 # Reference
 
 feel free to use/share this code openly

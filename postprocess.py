@@ -85,12 +85,10 @@ def aggregate_results(results, group_idxs, out_dir):
         row['reg_param'] = reg_param
         row['num_features'] = num_features
         row['noise_std'] = noise_std
-    #         print(curve.describe())
-    
-#         if reg_param > 9 and model_type == 'lasso':
-#             print(gr.preds_test.values)
-
         for curve_name, gr2 in curve:
+            
+            # calculate bias/var across repeats
+            '''
             if dset == 'gaussian':
                 dset_name = ''
                 _, _, _, y_true, betastar = \
@@ -99,7 +97,7 @@ def aggregate_results(results, group_idxs, out_dir):
                                              beta_type=p.beta_type, beta_norm=p.beta_norm, cov_param=p.cov_param)
                 y_true = y_true.reshape(1, -1) # 1 x n_test
             elif dset == 'pmlb':
-                dset_name = data.REGRESSION_DSETS_LARGE_NAMES_RECOGNIZABLE[dset_num]
+                dset_name = data.REGRESSION_DSETS_LARGE_NAMES_RECOGNIZABLE[dset_num] # note this was switched at some point
                 X, y = pmlb.fetch_data(dset_name, return_X_y=True)
                 fit.seed(703858704)
                 _, _, _, y_true = train_test_split(X, y) # get test set
@@ -108,35 +106,29 @@ def aggregate_results(results, group_idxs, out_dir):
             preds = gr2.preds_test.values
             preds = np.stack(preds) # num_seeds x n_test
             preds_mean = preds.mean(axis=0).reshape(1, -1) # 1 x n_test
-#             print('shapes', preds.shape, y_true.shape, preds_mean.shape)
             y_true_rep = np.repeat(y_true, repeats=preds.shape[0], axis=0) # num_seeds x n_test
-#             print('rep', y_true_rep.shape, y_true_rep[0, :10], y_true_rep[1, :10])
             preds_mu = np.mean(preds)
             bias = np.mean(preds_mu - y_true_rep.flatten())
             var = np.mean(np.square(preds.flatten() - preds_mu))
             mse_noiseless = metrics.mean_squared_error(preds.flatten(), y_true_rep.flatten())
-#             bias = np.mean(preds_mean - y_true)
-#             var = np.mean(np.square(preds - preds_mean))
-            
-#             print('bias', bias, 'var', var, 'mse', mse_noiseless, 'comb', bias**2 + var)
-
-            row['ratio'].append(gr2.num_features.values[0] / gr2.n_train.values[0])
-            row['n_train'].append(gr2.n_train.values[0])
             row['bias'].append(bias)
             row['var'].append(var)
+            row['mse_noiseless'].append(mse_noiseless)
+            '''
+            
+            # aggregate calculated stats
+            row['ratio'].append(gr2.num_features.values[0] / gr2.n_train.values[0])
+            row['n_train'].append(gr2.n_train.values[0])
             row['wnorm'].append(gr2.wnorm.mean())
             row['mse_train'].append(gr2.train_mse.mean())
             row['mse_test'].append(gr2.test_mse.mean())
-            row['mse_noiseless'].append(mse_noiseless)
+            
             for key in ['num_nonzero', 'df1', 'df2', 'df3']:
-#                 print(key, gr2[key].mean())
                 row[key].append(gr2[key].mean())
-#             row['mse_zero'].append(metrics.mean_squared_error(y_true, np.zeros(y_true.size).reshape(y_true.shape))) # metrics.mean_squared_error(y_true, np.zeros(y_true.size).reshape(y_true.shape))
 
         for k in keys:
             df.at[name, k] = np.array(row[k]) #3# ratios\
-#     mse_zero = np.mean(np.square(y_true))
-    df['mse_zero'] = metrics.mean_squared_error(y_true, np.zeros(y_true.size).reshape(y_true.shape))
+    # df['mse_zero'] = metrics.mean_squared_error(y_true, np.zeros(y_true.size).reshape(y_true.shape))
     df.to_pickle(oj(out_dir, 'processed.pkl')) # save into out_dir
     
     
@@ -144,15 +136,6 @@ def aggregate_results(results, group_idxs, out_dir):
 
 
 # run this to process / save some dsets
-# all_linear_old
-    # these all have ols, ridge, sta, lasso with appropriate hyperparams
-    # beta=gaussian_noise=1e-1
-    # beta=gaussian_noise=0 
-    # beta=onehot_noise=0  
-    # beta=onehot_noise=1e-1 
-# all_linear_clustered
-# all_linear_vary_noise_distr
-# all_linear_pmlb
 if __name__ == '__main__':
     out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22_3'
     for folder in tqdm(sorted(os.listdir(out_dir))):

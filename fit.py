@@ -16,7 +16,6 @@ import time
 import random
 from os.path import join as oj
 import os
-import viz
 import sys
 from params import S as S_save
 import pmlb
