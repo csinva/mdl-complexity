@@ -4,7 +4,7 @@ import numpy as np
 from copy import deepcopy
 partition = 'low'
 
-OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22_3/'
+OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may28_1/'
 PARAMS_BASE = {
     'out_dir': [OUT_BASE + 'test'],
     'seed': range(3),    
@@ -61,12 +61,13 @@ PARAMS_PMLBS = [
         'dset': ['pmlb'],
         'dset_num': [i],
         'noise_std': [1]
-    } for i in range(0, 40) # 58 in total
+    } for i in range(0, 28) # 28
 ]
 
 
-ALL_PARAMS = [PARAMS_IID, PARAMS_DECAY, PARAMS_CLUSTERED,
-              PARAMS_T, PARAMS_THRESH, PARAMS_SCALE_VAR] #+ PARAMS_PMLBS
+ALL_PARAMS = PARAMS_PMLBS
+#         [PARAMS_IID, PARAMS_DECAY, PARAMS_CLUSTERED,
+#               PARAMS_T, PARAMS_THRESH, PARAMS_SCALE_VAR] #+ PARAMS_PMLBS
 for param_settings in ALL_PARAMS:
     params_to_vary = deepcopy(PARAMS_BASE)
     params_to_vary.update(param_settings)

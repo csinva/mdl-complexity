@@ -103,6 +103,15 @@ def fit(p):
                 s.w = inv @ X_train.T @ y_train / p.n_train
             elif p.model_type == 'mdl_m1':
                 eigenvals, eigenvecs = npl.eig(X_train.T @ X_train)
+                
+                if p.dset == 'pmlb' and p.n_train > p.num_features + 1:
+                    def estimate_sigma_unbiased():
+                        m = LinearRegression(fit_intercept=False)
+                        m.fit(X_train, y_train)
+                        y_pred = m.predict(X_train)
+                        return np.sum(np.square(y_train - y_pred)) / (p.n_train - p.num_features - 1)
+                    p.noise_std = estimate_sigma_unbiased()
+                
                 var = p.noise_std**2
                 def mdl1_loss(l):
                     inv = npl.pinv(X_train.T @ X_train + l * np.eye(p.num_features))

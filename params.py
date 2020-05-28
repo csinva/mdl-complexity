@@ -12,11 +12,11 @@ class p:
     dset_name = ''
     reg_param = -1.0 # -1 use csv
     num_features = 100
-    n_train_over_num_features = 0.75 # this and num_features sets n_train
+    n_train_over_num_features = 0.75 # 0.75 # this and num_features sets n_train
     n_test = 100
     noise_std = 1e-1
     noise_distr = 'gaussian' # gaussian, t, gaussian_scale_var, thresh
-    model_type = 'ridge' # mdl_orig, 
+    model_type = 'mdl_m1' # mdl_orig, ridge
     cov_param = 0.0
     
     # for rf
