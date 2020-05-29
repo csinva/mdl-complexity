@@ -21,7 +21,7 @@ import data
 import fit
 
 
-def process_results(results):
+def fill_in_default_results(results):
     '''add keys for things which weren't recorded at the time
     '''
     for key in ['H_trace']:
@@ -137,7 +137,7 @@ def aggregate_results(results, group_idxs, out_dir):
 
 # run this to process / save some dsets
 if __name__ == '__main__':
-    out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may22_3'
+    out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/may28_1'
     for folder in tqdm(sorted(os.listdir(out_dir))):
         folder_path = oj(out_dir, folder)
         if not 'processed.pkl' in os.listdir(folder_path):
@@ -148,13 +148,13 @@ if __name__ == '__main__':
             results = pd.concat(results_list, axis=1).T.infer_objects()
 
 
-
-            group_idxs = ['dset', 'dset_num', 'dset_name',
+            # group based on the experiments for which these are the same
+            group_idxs = ['dset', 'dset_name',
                           'beta_type', 'model_type', 'reg_param',
-                          'beta_norm',
-                          'noise_std', 'noise_distr', 'iid',  'cov_param',# dset
+                          'beta_norm', # noise_std
+                          'noise_distr', 'iid',  'cov_param',# dset
                          ] # model
-            results = process_results(results)
+            results = fill_in_default_results(results)
             df = aggregate_results(results, group_idxs, folder_path)
 #             except Exception as e:
 #                 print('failed', folder, e)
