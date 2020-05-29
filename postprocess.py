@@ -68,7 +68,7 @@ def aggregate_results(results, group_idxs, out_dir):
     
     # keys to record
     keys = ['ratio', 'bias', 'var', 'wnorm', 'mse_train', 'mse_test', 'num_nonzero',
-            'mse_noiseless', 'df1', 'df2', 'df3', 'n_train']
+            'mse_noiseless', 'df1', 'df2', 'df3', 'n_train', 'num_features']
     for key in keys:
         df[key] = None
     for name, gr in tqdm(r2):
