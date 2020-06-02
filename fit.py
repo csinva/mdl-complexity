@@ -103,6 +103,15 @@ def fit(p):
                 s.w = inv @ X_train.T @ y_train / p.n_train
             elif p.model_type == 'mdl_m1':
                 eigenvals, eigenvecs = npl.eig(X_train.T @ X_train)
+                
+                if p.dset == 'pmlb' and p.n_train > p.num_features + 1:
+                    def estimate_sigma_unbiased():
+                        m = LinearRegression(fit_intercept=False)
+                        m.fit(X_train, y_train)
+                        y_pred = m.predict(X_train)
+                        return np.sum(np.square(y_train - y_pred)) / (p.n_train - p.num_features - 1)
+                    p.noise_std = estimate_sigma_unbiased()
+                
                 var = p.noise_std**2
                 def mdl1_loss(l):
                     inv = npl.pinv(X_train.T @ X_train + l * np.eye(p.num_features))
@@ -122,13 +131,16 @@ def fit(p):
             elif p.model_type == 'lasso':
                 m = Lasso(fit_intercept=False, alpha=p.reg_param)
             elif p.model_type == 'ridge':
-                if p.reg_param == -1:
-                    m = RidgeCV(fit_intercept=False, alphas=np.logspace(-3, 3, num=10, base=10))
+                if p.reg_param < 0:
+                    if p.reg_param == -1:
+                        m = RidgeCV(fit_intercept=False, alphas=np.logspace(-3, 3, num=10, base=10))
+                    else:
+                        m = RidgeCV(fit_intercept=False, alphas=np.logspace(-3, 3, num=10, base=10), cv=int(-1 * p.reg_param))
                 else:
                     m = Ridge(fit_intercept=False, alpha=p.reg_param)
             
             m.fit(X_train, y_train)
-            if p.reg_param == -1 and p.model_type == 'ridge':
+            if p.reg_param < 0 and p.model_type == 'ridge':
                 s.lambda_opt = m.alpha_
             s.w = m.coef_
         
@@ -145,7 +157,6 @@ def fit(p):
             s.df3 = s.df1
         
         
-        print('here!')
         # store predictions and things about w
         # s.H_trace = np.trace(H)
         s.wnorm = np.linalg.norm(s.w)
