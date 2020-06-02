@@ -1,0 +1,1 @@
+This folder stores intermediate output from the main code.
