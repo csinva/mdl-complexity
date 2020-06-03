@@ -13,6 +13,7 @@ def prac_mdl_comp(X_train, y_train, variance=1):
         return inv @ X_train.T @ y_train
 
     def prac_mdl_comp_objective(l):
+#         print(X_train.shape, eigenvals.shape)
         thetahat = calc_thetahat(l)
         mse_norm = npl.norm(y_train - X_train @ thetahat)**2 / (2 * variance)
         theta_norm = npl.norm(thetahat)**2 / (2 * variance)
