@@ -8,7 +8,7 @@ Official code for using / reproducing MDL-COMP from the paper "Rethinking comple
 ![](https://csinva.github.io/mdl-complexity/results/fig_iid_mse.svg)
 
 
-Computation of `Prac-MDL-Comp` if fairly straightforward:
+Computation of `Prac-MDL-Comp` is fairly straightforward:
 
 ```python
 import numpy.linalg as npl
