@@ -2,9 +2,10 @@ import itertools
 from slurmpy import Slurm
 import numpy as np
 from copy import deepcopy
+import config
 partition = 'low'
 
-OUT_BASE = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/jun1/'
+OUT_BASE = config.test_dir
 PARAMS_BASE = {
     'out_dir': [OUT_BASE + 'test'],
     'seed': range(3),    
