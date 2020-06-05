@@ -137,7 +137,7 @@ def aggregate_results(results, group_idxs, out_dir):
 
 # run this to process / save some dsets
 if __name__ == '__main__':
-    out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/mdl_sim_may/jun1'
+    out_dir = '' # put dir to process here
     for folder in tqdm(sorted(os.listdir(out_dir))):
         folder_path = oj(out_dir, folder)
         if not 'processed.pkl' in os.listdir(folder_path):

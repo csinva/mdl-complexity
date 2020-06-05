@@ -1,9 +1,10 @@
 import numpy as np
 from random import randint
+from config import test_dir
 
 class p:
     seed = 15
-    out_dir = '/scratch/users/vision/yu_dl/raaz.rsk/double_descent/test'
+    out_dir = test_dir
     dset = 'pmlb' # gaussian
     beta_type = 'gaussian' # one_hot
     beta_norm = 1
