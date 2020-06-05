@@ -1,13 +1,20 @@
-Official code for using / reproducing MDL-COMP from the paper "Rethinking complexity in high dimensions". This code implements the calculation of MDL Complexity given training data and explores its ability to inform generalization.
+Official code for using / reproducing MDL-COMP from the paper "Rethinking complexity and the bias-variance tradeoff". This code implements the calculation of MDL Complexity given training data and explores its ability to inform generalization.
 
 *Note: this repo is actively maintained. For any questions please file an issue.*
 
-- simple quickstart can be found in the 2 explore notebooks
-- running more in-depth experiments requires calling `submit_jobs.py`, then analyzing the results using the 2 analyze notebooks
+# Understanding MDL-COMP
+
+MDL-COMP is a complexity measure based on the principle of minimum description length of Rissanen.
+
+
+# Reproducing the results in the paper
+- most of the results can be produced by simply running the notebooks
+- the experiments with real-data are more in depth and require running the `submit_real_data_jobs.py` file before running the notebook to view the analysis
 
 ![](https://csinva.github.io/mdl-complexity/results/fig_iid_mse.svg)
 
 
+## Calculating MDL-COMP
 Computation of `Prac-MDL-Comp` is fairly straightforward:
 
 ```python
@@ -26,7 +33,6 @@ def prac_mdl_comp(X_train, y_train, variance=1):
         return inv @ X_train.T @ y_train
 
     def prac_mdl_comp_objective(l):
-#         print(X_train.shape, eigenvals.shape)
         thetahat = calc_thetahat(l)
         mse_norm = npl.norm(y_train - X_train @ thetahat)**2 / (2 * variance)
         theta_norm = npl.norm(thetahat)**2 / (2 * variance)
