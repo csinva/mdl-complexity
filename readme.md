@@ -1,4 +1,4 @@
-Official code for using / reproducing MDL-COMP from the paper "Rethinking complexity and the bias-variance tradeoff". This code implements the calculation of MDL Complexity given training data and explores its ability to inform generalization.
+Official code for using / reproducing MDL-COMP from the paper "Rethinking complexity and the bias-variance tradeoff" ([arXiv link](https://arxiv.org/abs/2006.10189)). This code implements the calculation of MDL Complexity given training data and explores its ability to inform generalization.
 
 *Note: this repo is actively maintained. For any questions please file an issue.*
 
@@ -55,3 +55,11 @@ def prac_mdl_comp(X_train, y_train, variance=1):
 
 - feel free to use/share this code openly
 - if you find this code useful for your research, please cite the following:
+```c
+@article{dwivedi2020revisiting,
+  title={Revisiting complexity and the bias-variance tradeoff},
+  author={Dwivedi, Raaz and Singh, Chandan and and Yu, Bin and Wainwright, Martin},
+  journal={arXiv preprint arXiv:2006.10189},
+  year={2020}
+}
+```
