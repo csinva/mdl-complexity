@@ -1,11 +1,6 @@
-Official code for using / reproducing MDL-COMP from the paper "Rethinking complexity and the bias-variance tradeoff" ([arXiv link](https://arxiv.org/abs/2006.10189)). This code implements the calculation of MDL Complexity given training data and explores its ability to inform generalization.
+Official code for using / reproducing MDL-COMP from the paper "Rethinking complexity and the bias-variance tradeoff" ([arXiv link](https://arxiv.org/abs/2006.10189)). This code implements the calculation of MDL Complexity given training data and explores its ability to inform generalization. MDL-COMP is a complexity measure based on the principle of minimum description length of Rissanen. It enjoys nice theoretical properties and can be used to perform model selection, showing results on par with cross-validation (and sometimes even better with limited data).
 
 *Note: this repo is actively maintained. For any questions please file an issue.*
-
-# Understanding MDL-COMP
-
-MDL-COMP is a complexity measure based on the principle of minimum description length of Rissanen.
-
 
 # Reproducing the results in the paper
 - most of the results can be produced by simply running the notebooks
