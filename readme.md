@@ -4,7 +4,7 @@ Official code for using / reproducing MDL-COMP from the paper "Revisiting comple
 
 # Reproducing the results in the paper
 - most of the results can be produced by simply running the notebooks
-- the experiments with real-data are more in depth and require running the `submit_real_data_jobs.py` file before running the notebook to view the analysis
+- the experiments with real-data are more in depth and require running the `submit_real_data_jobs.py` file (which is a script that calls `fit.py` with the appropriate hyperparameters) before running the notebook to view the analysis
 
 ![](https://csinva.github.io/mdl-complexity/results/fig_iid_mse.svg)
 
