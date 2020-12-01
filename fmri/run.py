@@ -70,7 +70,7 @@ if __name__ == '__main__':
     
     # fit linear models
     out_dir = '/scratch/users/vision/data/gallant/vim_2_crcns'
-    save_dir = oj(out_dir, 'testt')
+    save_dir = oj(out_dir, 'dec1_3')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
     print('saving to', save_dir)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     # load the normalized responses (requires first running preprocess_fmri)
     Y_train = load_h5(oj(out_dir, 'rt_norm.h5')) # training responses: 73728 (voxels) x 7200 (timepoints)    
     Y_test = load_h5(oj(out_dir, 'rv_norm.h5') )
-    sigmas = load_h5(oj(out_dir, f'out_rva_sigmas.h5'))
+    sigmas = load_h5(oj(out_dir, f'out_rva_sigmas_norm.h5'))
     (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy.pkl'), 'rb'))
     (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy.pkl'), 'rb'))
 
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         # reg values to try
         reg_params = np.logspace(3, 6, 20).round().astype(int)
 
-        '''
+        # fit ridge cv
         m = RidgeCV(alphas=reg_params, store_cv_values=True)
         m.fit(X_train, y_train)
         preds_train = m.predict(X_train)
@@ -142,17 +142,16 @@ if __name__ == '__main__':
         r2 = metrics.r2_score(y_test, preds)
         corr = np.corrcoef(y_test, preds)[0, 1]
         print('RidgeCV corr', corr)
-        '''
 
-
+        # fit mdl comp
         mdl_comp_opt = 1e10
         lambda_opt = None
         theta_opt = None
         r = {
-            'mse_norm': [],
-            'theta_norm': [],
-            'eigensum': [],
-            'mdl_comp': [],
+            'mse_norms': [],
+            'theta_norms': [],
+            'eigensums': [],
+            'mdl_comps': [],
         }           
         for l in tqdm(reg_params):
             inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_st_{l}.pkl'), 'rb'))
@@ -162,23 +161,26 @@ if __name__ == '__main__':
             eigensum = 0.5 * np.sum(np.log((eigenvals + l) / l))
             mdl_comp = (mse_norm + theta_norm + eigensum) / y_train.size
             
-            r['mse_norm'].append(mse_norm)
-            r['theta_norm'].append(theta_norm)
-            r['eigensum'].append(eigensum)
-            r['mdl_comp'].append(mdl_comp)
+            r['mse_norms'].append(mse_norm)
+            r['theta_norms'].append(theta_norm)
+            r['eigensums'].append(eigensum)
+            r['mdl_comps'].append(mdl_comp)
             
             if mdl_comp < mdl_comp_opt:
-                mdl_comp = mdl_comp_opt
+                mdl_comp_opt = mdl_comp
                 lambda_opt = l
                 theta_opt = thetahat
-
-        snr = (npl.norm(y) ** 2 - n * variance) / (n * variance)
-        y_norm = npl.norm(y)
+        
+        # some misc stats
+        snr = (npl.norm(y_train) ** 2 - n_train * variance) / (n_train * variance)
+        y_norm = npl.norm(y_train)
+        
+        # save everything
         results = {
             'roi': roi,
             'model': m,
             'lambda_opt': lambda_opt,
-            'theta_opt': that_opt,
+            'theta_opt': theta_opt,
             'mdl_comp_opt': mdl_comp_opt,
             'cv_values': m.cv_values_,
             'snr': snr,
@@ -193,28 +195,6 @@ if __name__ == '__main__':
             'r2_test': r2,
             'corr_test': corr,
             'idx': i,
-            **r
+            **r,
         }
-        pkl.dump(r, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))        
-
-#                 'term1': term1,
-#                 'term2': term2,
-#                 'term3': term3,
-#                 'term4': term4,
-#                 'complexity1': complexity1 / n,
-#                 'complexity2': complexity2 / n,    
-
-        '''
-        d_n_min = min(n_train, d)
-        term1 = 0.5 * (npl.norm(y) ** 2 - npl.norm(w) ** 2) / var
-        term2 = 0.5 * np.sum([np.log(1 + w[i]**2 / var) for i in range(d_n_min)])
-        complexity1 = term1 + term2
-#                 print('term1', term1, 'term2', term2) #, 'alpha', m.alpha_)
-
-        idxs = np.abs(w) > sigma
-        term3 = 0.5 * np.sum([np.log(1 + w[i]**2 / var) for i in np.arange(n)[idxs]])
-        term4 = 0.5 * np.sum([w[i]**2 / var for i in np.arange(n)[~idxs]])
-        complexity2 = term1 + term3 + term4
-        '''
-
-            
+        pkl.dump(results, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
