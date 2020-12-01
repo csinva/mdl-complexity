@@ -1,1 +1,2 @@
 - uses data from https://crcns.org/data-sets/vc/vim-2
+- to set up the data, run the cells in `preprocess_fmri.ipynb`
