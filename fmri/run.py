@@ -14,7 +14,6 @@ import h5py
 from scipy.io import loadmat
 from copy import deepcopy
 from skimage.filters import gabor_kernel
-import gabor_feats
 from sklearn.linear_model import RidgeCV
 import seaborn as sns
 from scipy.io import loadmat
@@ -70,8 +69,9 @@ if __name__ == '__main__':
     
     # fit linear models
     use_sigmas = False
+    use_small = True
     out_dir = '/scratch/users/vision/data/gallant/vim_2_crcns'
-    save_dir = oj(out_dir, 'dec1_6')
+    save_dir = oj(out_dir, 'dec2_small_1')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
     print('saving to', save_dir)
@@ -89,7 +89,10 @@ if __name__ == '__main__':
     X_test = X_test.reshape(X_test.shape[0], -1)
     '''
     # load the motion energy features
-    X_train = np.array(loadmat(oj(out_dir, 'mot_energy_feats_st.mat'))['S_fin'])
+    if use_small:
+        X_train = load_h5(oj(out_dir, f'mot_energy_feats_st_small.h5'))
+    else:
+        X_train = np.array(loadmat(oj(out_dir, 'mot_energy_feats_st.mat'))['S_fin'])
     X_test = np.array(loadmat(oj(out_dir, 'mot_energy_feats_sv.mat'))['S_fin'])
     
     '''
@@ -101,10 +104,15 @@ if __name__ == '__main__':
     # load the normalized responses (requires first running preprocess_fmri)
     Y_train = load_h5(oj(out_dir, 'rt_norm.h5')) # training responses: 73728 (voxels) x 7200 (timepoints)    
     Y_test = load_h5(oj(out_dir, 'rv_norm.h5') )
-    sigmas = load_h5(oj(out_dir, f'out_rva_sigmas_norm.h5'))
-    (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy.pkl'), 'rb'))
-    (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy.pkl'), 'rb'))
-
+    sigmas = load_h5(oj(out_dir, f'out_rva_sigmas_norm.h5')) # stddev across repeats
+    if use_small:
+#         (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy_small.pkl'), 'rb'))
+        (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy_small.pkl'), 'rb'))        
+        Y_train = Y_train[:, :720]
+    else:
+#         (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy.pkl'), 'rb'))
+        (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy.pkl'), 'rb'))
+    
     
     # loop over individual neurons
     for run in runs:
@@ -116,7 +124,7 @@ if __name__ == '__main__':
         # select response for neuron i
         y_train = Y_train[i]
         y_test = Y_test[i]
-        w = U.T @ y_train
+        # w = U.T @ y_train
         if use_sigmas:
             variance = sigmas[i]**2
         else:
@@ -158,7 +166,10 @@ if __name__ == '__main__':
             'mse_tests': [],
         }           
         for l in tqdm(reg_params):
-            inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_st_{l}.pkl'), 'rb'))
+            if use_small:
+                inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_st_{l}_small.pkl'), 'rb'))
+            else:
+                inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_st_{l}.pkl'), 'rb'))
             thetahat = inv @ X_train.T @ y_train
             mse_norm = npl.norm(y_train - X_train @ thetahat)**2 / (2 * variance)
             theta_norm = npl.norm(thetahat)**2 / (2 * variance)
