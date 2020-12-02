@@ -69,8 +69,9 @@ if __name__ == '__main__':
     print('runs', runs)
     
     # fit linear models
+    use_sigmas = False
     out_dir = '/scratch/users/vision/data/gallant/vim_2_crcns'
-    save_dir = oj(out_dir, 'dec1_3')
+    save_dir = oj(out_dir, 'dec1_6')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
     print('saving to', save_dir)
@@ -116,8 +117,10 @@ if __name__ == '__main__':
         y_train = Y_train[i]
         y_test = Y_test[i]
         w = U.T @ y_train
-        sigma = sigmas[i]
-        variance = sigma**2
+        if use_sigmas:
+            variance = sigmas[i]**2
+        else:
+            variance = 1
 
         # count number of dims with missing time_points
         n_train = np.sum(~np.isnan(y_train))
@@ -152,24 +155,30 @@ if __name__ == '__main__':
             'theta_norms': [],
             'eigensums': [],
             'mdl_comps': [],
+            'mse_tests': [],
         }           
         for l in tqdm(reg_params):
             inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_st_{l}.pkl'), 'rb'))
             thetahat = inv @ X_train.T @ y_train
             mse_norm = npl.norm(y_train - X_train @ thetahat)**2 / (2 * variance)
             theta_norm = npl.norm(thetahat)**2 / (2 * variance)
-            eigensum = 0.5 * np.sum(np.log((eigenvals + l) / l))
-            mdl_comp = (mse_norm + theta_norm + eigensum) / y_train.size
+            eigensum = 0.5 * np.sum(np.log(1 + eigenvals / l))
+            mdl_comp = (mse_norm + theta_norm + eigensum) / n_train
+            mse_test_mdl = metrics.mean_squared_error(y_test, X_test @ thetahat)            
             
             r['mse_norms'].append(mse_norm)
             r['theta_norms'].append(theta_norm)
             r['eigensums'].append(eigensum)
             r['mdl_comps'].append(mdl_comp)
+            r['mse_tests'].append(mse_test_mdl)
             
             if mdl_comp < mdl_comp_opt:
                 mdl_comp_opt = mdl_comp
                 lambda_opt = l
                 theta_opt = thetahat
+                
+        preds_test_mdl = X_test @ theta_opt
+        mse_test_mdl = metrics.mean_squared_error(y_test, preds_test_mdl)
         
         # some misc stats
         snr = (npl.norm(y_train) ** 2 - n_train * variance) / (n_train * variance)
@@ -182,6 +191,7 @@ if __name__ == '__main__':
             'lambda_opt': lambda_opt,
             'theta_opt': theta_opt,
             'mdl_comp_opt': mdl_comp_opt,
+            'mse_test_mdl': mse_test_mdl,
             'cv_values': m.cv_values_,
             'snr': snr,
             'lambda_best':  m.alpha_,
