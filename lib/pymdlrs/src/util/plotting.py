@@ -8,7 +8,9 @@ import warnings
 import time
 import datetime
 import operator as op
-
+import sys
+sys.path.append('../../../')
+from prac_mdl_comp import RidgeMDLCOMP
 from sklearn.model_selection import learning_curve as _learning_curve
 from sklearn.linear_model import ARDRegression
 from src.ulnml.least_square_regression import RidgeULNML
@@ -52,6 +54,8 @@ def get_sigma2(estimator):
     e = estimator
     if isinstance(e, ARDRegression):
         return 1 / e.alpha_
+    elif isinstance(e, RidgeMDLCOMP):
+        return 1
     else:
         return e.sigma2_
 
@@ -111,7 +115,7 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=5, scoring=rmse,
                      test_scores_mean + 1 * test_scores_std, alpha=0.05, color=color)
     plt.plot(train_sizes, test_scores_mean, style, color=color,
              label=title)
-    return plt
+    return train_sizes, test_scores_mean
 
 
 def run_and_plot(X, y, ylabel, scoring, max_train_size=10000, n_jobs=-1):
@@ -152,11 +156,13 @@ def run_and_plot(X, y, ylabel, scoring, max_train_size=10000, n_jobs=-1):
                 "color": "k", "style": "x:"}),
             ("RVM", {"estimator": ARDRegression(fit_intercept=True), "color": "g", "style": "d:"}),
             ("MDL-RS", {"estimator": RidgeULNML(fit_intercept=False, n_iter=10000), "color": "m", "style": "s-."}),
+            ("MDL-COMP", {"estimator": RidgeMDLCOMP(), "color": "orange", "style": "s-."}),
             ]
 
+    results = {}
     for key, args in configs:
         print("running {} ..".format(key))
-        plot_learning_curve(
+        results[key] = plot_learning_curve(
             title=key, X=X, y=y,
             ylim=ylim, scoring=scoring,
             n_jobs=n_jobs, train_sizes=train_sizes,
@@ -166,3 +172,4 @@ def run_and_plot(X, y, ylabel, scoring, max_train_size=10000, n_jobs=-1):
     plt.xscale("log")
     plt.legend(loc="best")
     plt.tight_layout()
+    return results
