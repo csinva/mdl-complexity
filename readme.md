@@ -49,6 +49,7 @@ def prac_mdl_comp(X_train, y_train, variance=1):
 # Reference
 
 - feel free to use/share this code openly
+- uses code for mdl-rs from [here](https://github.com/koheimiya/pymdlrs)
 - if you find this code useful for your research, please cite the following:
 ```c
 @article{dwivedi2020revisiting,

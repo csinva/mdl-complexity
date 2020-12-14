@@ -1,6 +1,7 @@
 import numpy.linalg as npl
 import numpy as np
 import scipy.optimize
+from sklearn.base import BaseEstimator
 
 
 def prac_mdl_comp(X_train, y_train, variance=1):
@@ -30,3 +31,22 @@ def prac_mdl_comp(X_train, y_train, variance=1):
         'lambda_opt': lambda_opt,
         'thetahat': thetahat
     }
+
+
+class RidgeMDLCOMP(BaseEstimator):
+
+    def __init__(self):
+        pass
+
+    def fit(self, X: np.ndarray, y: np.ndarray):
+        stats = prac_mdl_comp(X, y)
+        self.theta = stats['thetahat']
+        self.lambda_opt = stats['lambda_opt']
+        self.prac_mdl = stats['prac_mdl']
+
+    def predict(self, X):
+#         if self.fit_intercept:
+#             return (X - self.intercept_X_) @ self.beta_ + self.intercept_y_
+#         else:
+#             X = np.concatenate([X, np.ones([len(X), 1])], axis=1)
+        return X @ self.theta

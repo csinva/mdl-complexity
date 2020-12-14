@@ -19,3 +19,4 @@ env
 clean.sh
 cancel_jobs.py
 .idea
+**tmp*

@@ -5,6 +5,7 @@ import tables, numpy
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage as ndi
+import sys
 from skimage import data
 import pickle as pkl
 from skimage.util import img_as_float
@@ -14,7 +15,9 @@ import h5py
 from scipy.io import loadmat
 from copy import deepcopy
 from skimage.filters import gabor_kernel
-from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import RidgeCV, ARDRegression
+sys.path.append('../lib/pymdlrs')
+from src.ulnml.least_square_regression import RidgeULNML
 import seaborn as sns
 from scipy.io import loadmat
 import numpy.linalg as npl
@@ -69,9 +72,9 @@ if __name__ == '__main__':
     
     # fit linear models
     use_sigmas = False
-    use_small = True
+    use_small = False
     out_dir = '/scratch/users/vision/data/gallant/vim_2_crcns'
-    save_dir = oj(out_dir, 'dec2_small_1')
+    save_dir = oj(out_dir, 'dec13_baselines')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
     print('saving to', save_dir)
@@ -141,7 +144,20 @@ if __name__ == '__main__':
         
         # reg values to try
         reg_params = np.logspace(3, 6, 20).round().astype(int)
-
+        
+        # fit ard + mdl-rs
+        baselines = {}
+        for model_type, model_name in zip([ARDRegression, RidgeULNML], ['ard', 'mdl-rs']):
+            model = model_type()
+            model.fit(X_train, y_train)
+            preds_train = model.predict(X_train)
+            preds = model.predict(X_test)
+            baselines[f'{model_name}_mse_train'] = metrics.mean_squared_error(y_train, preds_train)
+            baselines[f'{model_name}_r2_train'] = metrics.r2_score(y_train, preds_train)
+            baselines[f'{model_name}_mse'] = metrics.mean_squared_error(y_test, preds)
+            baselines[f'{model_name}_r2'] = metrics.r2_score(y_test, preds)
+            baselines[f'{model_name}_corr'] = np.corrcoef(y_test, preds)[0, 1]
+            
         # fit ridge cv
         m = RidgeCV(alphas=reg_params, store_cv_values=True)
         m.fit(X_train, y_train)
@@ -153,6 +169,7 @@ if __name__ == '__main__':
         r2 = metrics.r2_score(y_test, preds)
         corr = np.corrcoef(y_test, preds)[0, 1]
         print('RidgeCV corr', corr)
+        
 
         # fit mdl comp
         mdl_comp_opt = 1e10
@@ -199,23 +216,28 @@ if __name__ == '__main__':
         results = {
             'roi': roi,
             'model': m,
-            'lambda_opt': lambda_opt,
-            'theta_opt': theta_opt,
-            'mdl_comp_opt': mdl_comp_opt,
-            'mse_test_mdl': mse_test_mdl,
-            'cv_values': m.cv_values_,
             'snr': snr,
             'lambda_best':  m.alpha_,
             'n_train': n_train,
             'n_test': num_test,
             'd': d,
             'y_norm': y_norm,
+            'idx': i,
+            
+            # mdl stuff
+            'lambda_opt': lambda_opt,
+            'theta_opt': theta_opt,
+            'mdl_comp_opt': mdl_comp_opt,
+            'mse_test_mdl': mse_test_mdl,
+            
+            # cv stuff
+            'cv_values': m.cv_values_,
             'mse_train': mse_train, 
             'r2_train': r2_train,
             'mse_test': mse,                
             'r2_test': r2,
             'corr_test': corr,
-            'idx': i,
             **r,
+            **baselines,
         }
         pkl.dump(results, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
