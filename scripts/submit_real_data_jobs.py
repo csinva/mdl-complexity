@@ -137,7 +137,7 @@ for param_settings in ALL_PARAMS:
 
     # iterate
     for i in range(len(params_full)):
-        param_str = 'python3 fit.py '
+        param_str = 'python3 ../src/fit.py '
         for j, key in enumerate(ks):
             param_str += key + ' ' + str(params_full[i][j]) + ' '
         subprocess.call(param_str, shell=True)

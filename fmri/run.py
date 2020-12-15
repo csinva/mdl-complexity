@@ -68,13 +68,13 @@ if __name__ == '__main__':
         runs = [int(sys.argv[-1])]
     else:
         runs = list(range(300)) # this number determines which neuron we will pick
-    print('runs', runs)
+    print('\nruns', runs)
     
     # fit linear models
     use_sigmas = False
     use_small = False
     out_dir = '/scratch/users/vision/data/gallant/vim_2_crcns'
-    save_dir = oj(out_dir, 'dec13_baselines')
+    save_dir = oj(out_dir, 'dec14_baselines_ard')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
     print('saving to', save_dir)
@@ -140,6 +140,7 @@ if __name__ == '__main__':
 
         # only fit voxels with no missing vals
         if not (n_train == y_train.size and num_test == y_test.size):
+            print('\tskipping this voxel!')
             continue
         
         # reg values to try
@@ -147,7 +148,9 @@ if __name__ == '__main__':
         
         # fit ard + mdl-rs
         baselines = {}
-        for model_type, model_name in zip([ARDRegression, RidgeULNML], ['ard', 'mdl-rs']):
+        for model_type, model_name in zip([ARDRegression], ['ard']):
+#         for model_type, model_name in zip([ARDRegression, RidgeULNML], ['ard', 'mdl-rs']):
+            print('\tfitting', model_name)
             model = model_type()
             model.fit(X_train, y_train)
             preds_train = model.predict(X_train)
@@ -159,6 +162,7 @@ if __name__ == '__main__':
             baselines[f'{model_name}_corr'] = np.corrcoef(y_test, preds)[0, 1]
             
         # fit ridge cv
+        print('\tfitting ridgecv...')
         m = RidgeCV(alphas=reg_params, store_cv_values=True)
         m.fit(X_train, y_train)
         preds_train = m.predict(X_train)
@@ -168,7 +172,7 @@ if __name__ == '__main__':
         mse = metrics.mean_squared_error(y_test, preds)
         r2 = metrics.r2_score(y_test, preds)
         corr = np.corrcoef(y_test, preds)[0, 1]
-        print('RidgeCV corr', corr)
+        print('\tRidgeCV corr', corr)
         
 
         # fit mdl comp
@@ -241,3 +245,4 @@ if __name__ == '__main__':
             **baselines,
         }
         pkl.dump(results, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
+        print('\tdone!')

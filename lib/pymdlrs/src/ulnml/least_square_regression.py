@@ -3,6 +3,7 @@ import numpy as np
 from numpy import ndarray
 import scipy.linalg as linalg
 from typing import Union, Tuple
+from tqdm import tqdm
 import warnings
 
 from sklearn.base import BaseEstimator
@@ -51,7 +52,7 @@ class RidgeULNML(Learner, BaseEstimator):
 
         self.call_before_fit(X, y)
 
-        for i in range(self.n_iter):
+        for i in tqdm(range(self.n_iter)):
             self.beta_ = self.fit_beta(C, b, self.lam_)
             self.sigma2_ = self.fit_sigma2(X, y, self.beta_, self.lam_)
             self.lam_ = self.fit_lam(
