@@ -39,20 +39,24 @@ def load_h5(fname):
     f.close()
     return data
 
+def load_pkl(fname):
+    return pkl.load(open(fname, "rb" ))
+
 def save_pkl(d, fname):
     if os.path.exists(fname):
         os.remove(fname)
     with open(fname, 'wb') as f:
         pkl.dump(d, f)
     
-def get_roi_and_idx(run):
+def get_roi_and_idx(run, out_dir, sigmas):
     # select roi + i (which is the roi_idx)
     rois = ['v1lh', 'v2lh', 'v4lh', 'v1rh', 'v2rh', 'v4rh']
     roi = rois[run % len(rois)]
 
     f = tables.open_file(oj(out_dir, 'VoxelResponses_subject1.mat'), 'r')
     roi_idxs_all = f.get_node(f'/roi/{roi}')[:].flatten().nonzero()[0] # structure containing volume matrices (64x64x18) with indices corresponding to each roi in each hemisphere
-    roi_idxs = np.array([roi_idx for roi_idx in roi_idxs_all if ~np.isnan(sigmas[roi_idx])])
+    roi_idxs = np.array([roi_idx for roi_idx in roi_idxs_all
+                         if ~np.isnan(sigmas[roi_idx])])
 
     i = roi_idxs[run // len(rois)] # i is the roi idx
     return roi, i  
@@ -77,6 +81,7 @@ if __name__ == '__main__':
     save_dir = oj(out_dir, 'dec14_baselines_ard')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
+    reg_params = np.logspace(3, 6, 20).round().astype(int) # reg values to try (must match preprocess_fmri)
     print('saving to', save_dir)
     
 
@@ -97,6 +102,14 @@ if __name__ == '__main__':
     else:
         X_train = np.array(loadmat(oj(out_dir, 'mot_energy_feats_st.mat'))['S_fin'])
     X_test = np.array(loadmat(oj(out_dir, 'mot_energy_feats_sv.mat'))['S_fin'])
+    if use_small:
+#         (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy_small.pkl'), 'rb'))
+        (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy_small.pkl'), 'rb'))        
+        Y_train = Y_train[:, :720]
+    else:
+#         (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy.pkl'), 'rb'))
+        (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy.pkl'), 'rb'))
+    
     
     '''
     # load the raw responses
@@ -108,18 +121,12 @@ if __name__ == '__main__':
     Y_train = load_h5(oj(out_dir, 'rt_norm.h5')) # training responses: 73728 (voxels) x 7200 (timepoints)    
     Y_test = load_h5(oj(out_dir, 'rv_norm.h5') )
     sigmas = load_h5(oj(out_dir, f'out_rva_sigmas_norm.h5')) # stddev across repeats
-    if use_small:
-#         (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy_small.pkl'), 'rb'))
-        (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy_small.pkl'), 'rb'))        
-        Y_train = Y_train[:, :720]
-    else:
-#         (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy.pkl'), 'rb'))
-        (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy.pkl'), 'rb'))
+
     
     
     # loop over individual neurons
     for run in runs:
-        roi, i = get_roi_and_idx(run)
+        roi, i = get_roi_and_idx(run, out_dir, sigmas)
         results = {}
         os.makedirs(save_dir, exist_ok=True)
         print('fitting', roi, 'idx', i)
@@ -142,9 +149,6 @@ if __name__ == '__main__':
         if not (n_train == y_train.size and num_test == y_test.size):
             print('\tskipping this voxel!')
             continue
-        
-        # reg values to try
-        reg_params = np.logspace(3, 6, 20).round().astype(int)
         
         # fit ard + mdl-rs
         baselines = {}
@@ -245,4 +249,4 @@ if __name__ == '__main__':
             **baselines,
         }
         pkl.dump(results, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
-        print('\tdone!')
+        print(f'\tsuccesfully finished run {run}!')
