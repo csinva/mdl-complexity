@@ -192,7 +192,7 @@ if __name__ == '__main__':
         }           
         for l in tqdm(reg_params):
             if use_small:
-                inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_st_{l}_small.pkl'), 'rb'))
+                inv = pkl.load(open(oj(out_dir, f'invs/pinv_mot_energy_st_{l}_small.pkl'), 'rb'))
             else:
                 inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_st_{l}.pkl'), 'rb'))
             thetahat = inv @ X_train.T @ y_train

@@ -6,7 +6,7 @@ partition = 'high'
 kernel_version = True
 
 params_to_vary = {
-    'run': list(range(100)),
+    'run': list(range(100)), # should be range(100)
 }
 
 

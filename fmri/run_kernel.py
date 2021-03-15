@@ -43,12 +43,21 @@ if __name__ == '__main__':
     # fit linear models
     use_sigmas = False
     out_dir = '/scratch/users/vision/data/gallant/vim_2_crcns'
-    save_dir = oj(out_dir, 'mar14_kernel')
+    save_dir = oj(out_dir, 'mar15_kernel_1')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
     frac_train_for_cv = 0.75
     print('saving to', save_dir)
-    reg_params = np.logspace(3, 6, 20).round().astype(int) # reg values to try (must match preprocess_fmri)
+    
+    # reg values to try (must match preprocess_fmri)
+    reg_params_med = np.logspace(3, 6, 20)
+    reg_params_small = 1e-3 * reg_params_med
+    reg_params_large = 1e3 * reg_params_med
+    reg_params = np.concatenate((
+        reg_params_small[1:-1],
+        reg_params_med,
+        reg_params_large[1:2] # add on one larger value
+    )).round().astype(int)
     
     
     print('loading data...')
@@ -89,7 +98,6 @@ if __name__ == '__main__':
             
         # fit kernel ridge cv
         print('\tfitting kernel ridgecv...')
-        
         mses = []
         mse_best = 1e10
         n_train_cv = int(X_train_kernel.shape[0] * frac_train_for_cv)
@@ -97,7 +105,7 @@ if __name__ == '__main__':
         y_train_cv = y_train[:n_train_cv]
         X_val_cv = X_train_kernel[n_train_cv:, :n_train_cv]
         y_val_cv = y_train[n_train_cv:]
-        for alpha in reg_params:
+        for alpha in tqdm(reg_params):
             m = KernelRidge(alpha=alpha, kernel='precomputed')
             m.fit(X_train_cv, y_train_cv)
             preds_val = m.predict(X_val_cv[:, :n_train_cv]) # should take kernel mat of (n_samples, n_samples_fitted)
@@ -116,7 +124,6 @@ if __name__ == '__main__':
                 r2 = metrics.r2_score(y_test, preds)
                 corr = np.corrcoef(y_test, preds)[0, 1]
         print('\tKernelRidgeCV corr', corr)
-        
 
         # fit mdl comp
         print('\tfitting kernel mdl-comp...')
@@ -131,13 +138,13 @@ if __name__ == '__main__':
             'mse_tests': [],
         }           
         for l in tqdm(reg_params):
-            inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_kernel_ntk_{l}.pkl'), 'rb'))
-            thetahat = X_train.T @ inv @ y_train
-            mse_norm = npl.norm(y_train - X_train @ thetahat)**2 / (2 * variance)
-            theta_norm = npl.norm(thetahat)**2 / (2 * variance)
+            inv = pkl.load(open(oj(out_dir, f'invs/pinv_mot_energy_kernel_ntk_{l}.pkl'), 'rb'))
+            thetahat = inv @ y_train
+            mse_norm = npl.norm(X_train_kernel @ thetahat - y_train)**2 / (2 * variance)
+            theta_norm = thetahat.T @ X_train_kernel @ thetahat / (2 * variance)
             eigensum = 0.5 * np.sum(np.log(1 + eigenvals / l))
             mdl_comp = (mse_norm + theta_norm + eigensum) / n_train
-            mse_test_mdl = metrics.mean_squared_error(y_test, X_test @ thetahat)            
+            mse_test_mdl = metrics.mean_squared_error(y_test, X_test_kernel @ thetahat)            
             
             r['mse_norms'].append(mse_norm)
             r['theta_norms'].append(theta_norm)
@@ -150,7 +157,7 @@ if __name__ == '__main__':
                 lambda_opt = l
                 theta_opt = thetahat
                 
-        preds_test_mdl = X_test @ theta_opt
+        preds_test_mdl = X_test_kernel @ theta_opt
         mse_test_mdl = metrics.mean_squared_error(y_test, preds_test_mdl)
         
         # some misc stats
@@ -162,7 +169,7 @@ if __name__ == '__main__':
             'roi': roi,
             'model': m,
             'snr': snr,
-            'lambda_best':  alpha_best,
+            'lambda_best': alpha_best,
             'n_train': n_train,
             'n_test': num_test,
             'y_norm': y_norm,
