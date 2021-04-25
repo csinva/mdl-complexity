@@ -1,10 +1,12 @@
 import itertools
-from slurmpy import Slurm
 import numpy as np
 from copy import deepcopy
 import config
-partition = 'low'
+import subprocess
 
+
+
+#################################### Here we specify a bunch of different hyperparameters
 OUT_BASE = config.test_dir
 PARAMS_BASE = {
     'out_dir': [OUT_BASE + 'test'],
@@ -76,7 +78,21 @@ PARAMS_PMLBS_5FOLD = [
 ]
 
 
-ALL_PARAMS = PARAMS_PMLBS_5FOLD #PARAMS_PMLBS
+
+
+
+
+
+
+
+
+
+
+
+
+########################################## Here we select which sets of hypeparameters we want to run
+# PARAMS_PMLBS are the hyperparameters used to generate Table 1.
+ALL_PARAMS = PARAMS_PMLBS # PARAMS_PMLBS_5FOLD #
 #         [PARAMS_IID, PARAMS_DECAY, PARAMS_CLUSTERED,
 #               PARAMS_T, PARAMS_THRESH, PARAMS_SCALE_VAR] #+ PARAMS_PMLBS
 for param_settings in ALL_PARAMS:
@@ -86,7 +102,6 @@ for param_settings in ALL_PARAMS:
     
 
     # run
-    s = Slurm("double descent", {"partition": partition, "time": "3-0"})
     ks = sorted(params_to_vary.keys())
     vals = [params_to_vary[k] for k in ks]
     param_combinations = list(itertools.product(*vals)) # list of tuples
@@ -122,7 +137,7 @@ for param_settings in ALL_PARAMS:
 
     # iterate
     for i in range(len(params_full)):
-        param_str = 'module load python; python3 fit.py '
+        param_str = 'python3 ../src/fit.py '
         for j, key in enumerate(ks):
             param_str += key + ' ' + str(params_full[i][j]) + ' '
-        s.run(param_str)
+        subprocess.call(param_str, shell=True)

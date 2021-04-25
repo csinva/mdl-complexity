@@ -5,6 +5,7 @@ import tables, numpy
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage as ndi
+import sys
 from skimage import data
 import pickle as pkl
 from skimage.util import img_as_float
@@ -14,14 +15,16 @@ import h5py
 from scipy.io import loadmat
 from copy import deepcopy
 from skimage.filters import gabor_kernel
-import gabor_feats
-from sklearn.linear_model import RidgeCV
+from sklearn.linear_model import RidgeCV, ARDRegression
+sys.path.append('../lib/pymdlrs')
+from src.ulnml.least_square_regression import RidgeULNML
 import seaborn as sns
 from scipy.io import loadmat
 import numpy.linalg as npl
 from scipy.optimize import minimize
 import random
 import sys
+import scipy
 
 def save_h5(data, fname):
     if os.path.exists(fname):
@@ -36,23 +39,28 @@ def load_h5(fname):
     f.close()
     return data
 
+def load_pkl(fname):
+    return pkl.load(open(fname, "rb" ))
+
 def save_pkl(d, fname):
     if os.path.exists(fname):
         os.remove(fname)
     with open(fname, 'wb') as f:
         pkl.dump(d, f)
     
-def get_roi_and_idx(run):
+def get_roi_and_idx(run, out_dir, sigmas):
     # select roi + i (which is the roi_idx)
     rois = ['v1lh', 'v2lh', 'v4lh', 'v1rh', 'v2rh', 'v4rh']
     roi = rois[run % len(rois)]
 
     f = tables.open_file(oj(out_dir, 'VoxelResponses_subject1.mat'), 'r')
     roi_idxs_all = f.get_node(f'/roi/{roi}')[:].flatten().nonzero()[0] # structure containing volume matrices (64x64x18) with indices corresponding to each roi in each hemisphere
-    roi_idxs = np.array([roi_idx for roi_idx in roi_idxs_all if ~np.isnan(sigmas[roi_idx])])
+    roi_idxs = np.array([roi_idx for roi_idx in roi_idxs_all
+                         if ~np.isnan(sigmas[roi_idx])])
 
     i = roi_idxs[run // len(rois)] # i is the roi idx
     return roi, i  
+
     
 if __name__ == '__main__':
     np.random.seed(42) 
@@ -64,17 +72,22 @@ if __name__ == '__main__':
         runs = [int(sys.argv[-1])]
     else:
         runs = list(range(300)) # this number determines which neuron we will pick
-    print(runs)
+    print('\nruns', runs)
     
     # fit linear models
+    use_sigmas = False
+    use_small = False
     out_dir = '/scratch/users/vision/data/gallant/vim_2_crcns'
-    save_dir = oj(out_dir, 'test')
+    save_dir = oj(out_dir, 'dec14_baselines_ard')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
+    reg_params = np.logspace(3, 6, 20).round().astype(int) # reg values to try (must match preprocess_fmri)
+    print('saving to', save_dir)
     
 
     print('loading data...')
     '''
+    # load the raw pixel data
     feats_name = oj(out_dir, f'out_st{suffix}{norm}.h5')
     feats_test_name = oj(out_dir, f'out_sv{suffix}{norm}.h5')
     X_train = np.array(h5py.File(feats_name, 'r')['data'])
@@ -83,99 +96,157 @@ if __name__ == '__main__':
     X_test = np.array(h5py.File(feats_test_name, 'r')['data'])
     X_test = X_test.reshape(X_test.shape[0], -1)
     '''
-    X_train = np.array(loadmat(oj(out_dir, 'mot_energy_feats_st.mat'))['S_fin'])
+    # load the motion energy features
+    if use_small:
+        X_train = load_h5(oj(out_dir, f'mot_energy_feats_st_small.h5'))
+    else:
+        X_train = np.array(loadmat(oj(out_dir, 'mot_energy_feats_st.mat'))['S_fin'])
     X_test = np.array(loadmat(oj(out_dir, 'mot_energy_feats_sv.mat'))['S_fin'])
+    if use_small:
+#         (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy_small.pkl'), 'rb'))
+        (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy_small.pkl'), 'rb'))        
+        Y_train = Y_train[:, :720]
+    else:
+#         (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy.pkl'), 'rb'))
+        (eigenvals, eigenvecs) = pkl.load(open(oj(out_dir, f'eigenvals_eigenvecs_mot_energy.pkl'), 'rb'))
+    
     
     '''
+    # load the raw responses
     resps_name = oj(out_dir, 'VoxelResponses_subject1.mat')
     Y_train = np.array(tables.open_file(resps_name).get_node(f'/rt')[:]) # training responses: 73728 (voxels) x 7200 (timepoints)
     Y_test = np.array(tables.open_file(resps_name).get_node(f'/rv')[:]) 
     '''
+    # load the normalized responses (requires first running preprocess_fmri)
     Y_train = load_h5(oj(out_dir, 'rt_norm.h5')) # training responses: 73728 (voxels) x 7200 (timepoints)    
     Y_test = load_h5(oj(out_dir, 'rv_norm.h5') )
-    sigmas = load_h5(oj(out_dir, f'out_rva_sigmas.h5'))
-    (U, alphas, _) = pkl.load(open(oj(out_dir, f'decomp_mot_energy.pkl'), 'rb'))
+    sigmas = load_h5(oj(out_dir, f'out_rva_sigmas_norm.h5')) # stddev across repeats
+
+    
     
     # loop over individual neurons
     for run in runs:
-        roi, i = get_roi_and_idx(run)
+        roi, i = get_roi_and_idx(run, out_dir, sigmas)
         results = {}
         os.makedirs(save_dir, exist_ok=True)
         print('fitting', roi, 'idx', i)
 
-        # load stuff
+        # select response for neuron i
         y_train = Y_train[i]
         y_test = Y_test[i]
-        w = U.T @ y_train
-        sigma = sigmas[i]
-        var = sigma**2
+        # w = U.T @ y_train
+        if use_sigmas:
+            variance = sigmas[i]**2
+        else:
+            variance = 1
 
-        # ignore voxels w/ missing vals
-        idxs_cv = ~np.isnan(y_train)
-        idxs_test = ~np.isnan(y_test)
-        n_train = np.sum(idxs_cv)
-        num_test = np.sum(idxs_test)
+        # count number of dims with missing time_points
+        n_train = np.sum(~np.isnan(y_train))
+        num_test = np.sum(~np.isnan(y_test))
         d = X_train.shape[1]
-        d_n_min = min(n, d)
 
-        if n_train == y_train.size and num_test == y_test.size: 
-            m = RidgeCV(alphas=[1e3, 2.5e3, 5e3, 7.5e3, 1e4, 2.5e4, 5e4, 
-                                7.5e4, 1e5, 2.5e5, 5e5, 7.5e5, 1e6])
+        # only fit voxels with no missing vals
+        if not (n_train == y_train.size and num_test == y_test.size):
+            print('\tskipping this voxel!')
+            continue
+        
+        # fit ard + mdl-rs
+        baselines = {}
+        for model_type, model_name in zip([ARDRegression], ['ard']):
+#         for model_type, model_name in zip([ARDRegression, RidgeULNML], ['ard', 'mdl-rs']):
+            print('\tfitting', model_name)
+            model = model_type()
+            model.fit(X_train, y_train)
+            preds_train = model.predict(X_train)
+            preds = model.predict(X_test)
+            baselines[f'{model_name}_mse_train'] = metrics.mean_squared_error(y_train, preds_train)
+            baselines[f'{model_name}_r2_train'] = metrics.r2_score(y_train, preds_train)
+            baselines[f'{model_name}_mse'] = metrics.mean_squared_error(y_test, preds)
+            baselines[f'{model_name}_r2'] = metrics.r2_score(y_test, preds)
+            baselines[f'{model_name}_corr'] = np.corrcoef(y_test, preds)[0, 1]
             
-            r = {
-                'roi': roi,
-                'idx': i,                
-                'model': m,
-                'n_train': n_train
-            }            
-            
-            m.fit(X_train, y_train)
-            preds_train = m.predict(X_train)
-            preds = m.predict(X_test)
-            mse_train = metrics.mean_squared_error(y_train, preds_train)
-            r2_train = metrics.r2_score(y_train, preds_train)
-            mse = metrics.mean_squared_error(y_test, preds)
-            r2 = metrics.r2_score(y_test, preds)
-            corr = np.corrcoef(y_test, preds)[0, 1]
-    #                 print('w', npl.norm(w), 'y', npl.norm(y), 'var', var)
-    
-            '''
-            term1 = 0.5 * (npl.norm(y) ** 2 - npl.norm(w) ** 2) / var
-            term2 = 0.5 * np.sum([np.log(1 + w[i]**2 / var) for i in range(d_n_min)])
-            complexity1 = term1 + term2
-    #                 print('term1', term1, 'term2', term2) #, 'alpha', m.alpha_)
+        # fit ridge cv
+        print('\tfitting ridgecv...')
+        m = RidgeCV(alphas=reg_params, store_cv_values=True)
+        m.fit(X_train, y_train)
+        preds_train = m.predict(X_train)
+        preds = m.predict(X_test)
+        mse_train = metrics.mean_squared_error(y_train, preds_train)
+        r2_train = metrics.r2_score(y_train, preds_train)
+        mse = metrics.mean_squared_error(y_test, preds)
+        r2 = metrics.r2_score(y_test, preds)
+        corr = np.corrcoef(y_test, preds)[0, 1]
+        print('\tRidgeCV corr', corr)
+        
 
-            idxs = np.abs(w) > sigma
-            term3 = 0.5 * np.sum([np.log(1 + w[i]**2 / var) for i in np.arange(n)[idxs]])
-            term4 = 0.5 * np.sum([w[i]**2 / var for i in np.arange(n)[~idxs]])
-            complexity2 = term1 + term3 + term4
+        # fit mdl comp
+        mdl_comp_opt = 1e10
+        lambda_opt = None
+        theta_opt = None
+        r = {
+            'mse_norms': [],
+            'theta_norms': [],
+            'eigensums': [],
+            'mdl_comps': [],
+            'mse_tests': [],
+        }           
+        for l in tqdm(reg_params):
+            if use_small:
+                inv = pkl.load(open(oj(out_dir, f'invs/pinv_mot_energy_st_{l}_small.pkl'), 'rb'))
+            else:
+                inv = pkl.load(open(oj(out_dir, f'pinv_mot_energy_st_{l}.pkl'), 'rb'))
+            thetahat = inv @ X_train.T @ y_train
+            mse_norm = npl.norm(y_train - X_train @ thetahat)**2 / (2 * variance)
+            theta_norm = npl.norm(thetahat)**2 / (2 * variance)
+            eigensum = 0.5 * np.sum(np.log(1 + eigenvals / l))
+            mdl_comp = (mse_norm + theta_norm + eigensum) / n_train
+            mse_test_mdl = metrics.mean_squared_error(y_test, X_test @ thetahat)            
             
-            snr = (npl.norm(y) ** 2 - n * var) / (n * var)
-            y_norm = npl.norm(y)
-            '''
-
-            '''
-            results = {
-                'roi': roi,
-                'model': m,
-                'term1': term1,
-                'term2': term2,
-                'term3': term3,
-                'term4': term4,
-                'complexity1': complexity1 / n,
-                'complexity2': complexity2 / n,
-                'snr': snr,
-                'lambda_best':  m.alpha_,
-                'n_train': n,
-                'n_test': num_test,
-                'd': d,
-                'y_norm': y_norm,
-                'mse_train': mse_train, 
-                'r2_train': r2_train,
-                'mse_test': mse,                
-                'r2_test': r2,
-                'corr_test': corr,
-                'idx': i
-            }
-            '''
-            pkl.dump(r, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
+            r['mse_norms'].append(mse_norm)
+            r['theta_norms'].append(theta_norm)
+            r['eigensums'].append(eigensum)
+            r['mdl_comps'].append(mdl_comp)
+            r['mse_tests'].append(mse_test_mdl)
+            
+            if mdl_comp < mdl_comp_opt:
+                mdl_comp_opt = mdl_comp
+                lambda_opt = l
+                theta_opt = thetahat
+                
+        preds_test_mdl = X_test @ theta_opt
+        mse_test_mdl = metrics.mean_squared_error(y_test, preds_test_mdl)
+        
+        # some misc stats
+        snr = (npl.norm(y_train) ** 2 - n_train * variance) / (n_train * variance)
+        y_norm = npl.norm(y_train)
+        
+        # save everything
+        results = {
+            'roi': roi,
+            'model': m,
+            'snr': snr,
+            'lambda_best':  m.alpha_,
+            'n_train': n_train,
+            'n_test': num_test,
+            'd': d,
+            'y_norm': y_norm,
+            'idx': i,
+            
+            # mdl stuff
+            'lambda_opt': lambda_opt,
+            'theta_opt': theta_opt,
+            'mdl_comp_opt': mdl_comp_opt,
+            'mse_test_mdl': mse_test_mdl,
+            
+            # cv stuff
+            'cv_values': m.cv_values_,
+            'mse_train': mse_train, 
+            'r2_train': r2_train,
+            'mse_test': mse,                
+            'r2_test': r2,
+            'corr_test': corr,
+            **r,
+            **baselines,
+        }
+        pkl.dump(results, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
+        print(f'\tsuccesfully finished run {run}!')

@@ -1,14 +1,16 @@
-Official code for using / reproducing MDL-COMP from the paper "Rethinking complexity in high dimensions". This code implements the calculation of MDL Complexity given training data and explores its ability to inform generalization.
+Official code for using / reproducing MDL-COMP from the paper "Revisiting complexity and the bias-variance tradeoff" ([arXiv link](https://arxiv.org/abs/2006.10189)). This code implements the calculation of MDL Complexity given training data and explores its ability to inform generalization. MDL-COMP is a complexity measure based on the principle of minimum description length of Rissanen. It enjoys nice theoretical properties and can be used to perform model selection, showing results on par with cross-validation (and sometimes even better with limited data).
 
 *Note: this repo is actively maintained. For any questions please file an issue.*
 
-- simple quickstart can be found in the 2 explore notebooks
-- running more in-depth experiments requires calling `submit_jobs.py`, then analyzing the results using the 2 analyze notebooks
+# Reproducing the results in the paper
+- most of the results can be produced by simply running the notebooks
+- the experiments with real-data are more in depth and require running `scripts/submit_real_data_jobs.py` (which is a script that calls `src/fit.py` with the appropriate hyperparameters) before running the notebook to view the analysis
 
-![](https://csinva.github.io/mdl-complexity/results/fig_iid_mse.svg)
+![](https://csinva.github.io/mdl-complexity/reports/fig_iid_mse.svg)
 
 
-Computation of `Prac-MDL-Comp` if fairly straightforward:
+## Calculating MDL-COMP
+Computation of `Prac-MDL-Comp` is fairly straightforward:
 
 ```python
 import numpy.linalg as npl
@@ -26,7 +28,6 @@ def prac_mdl_comp(X_train, y_train, variance=1):
         return inv @ X_train.T @ y_train
 
     def prac_mdl_comp_objective(l):
-#         print(X_train.shape, eigenvals.shape)
         thetahat = calc_thetahat(l)
         mse_norm = npl.norm(y_train - X_train @ thetahat)**2 / (2 * variance)
         theta_norm = npl.norm(thetahat)**2 / (2 * variance)
@@ -48,4 +49,14 @@ def prac_mdl_comp(X_train, y_train, variance=1):
 # Reference
 
 - feel free to use/share this code openly
+- uses code for mdl-rs from [here](https://github.com/koheimiya/pymdlrs)
+- uses fmri data from [here](https://crcns.org/data-sets/vc/vim-2)
 - if you find this code useful for your research, please cite the following:
+```c
+@article{dwivedi2020revisiting,
+  title={Revisiting complexity and the bias-variance tradeoff},
+  author={Dwivedi, Raaz and Singh, Chandan and and Yu, Bin and Wainwright, Martin},
+  journal={arXiv preprint arXiv:2006.10189},
+  year={2020}
+}
+```

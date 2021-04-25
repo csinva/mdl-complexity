@@ -18,3 +18,5 @@ env
 **.nfs*
 clean.sh
 cancel_jobs.py
+.idea
+**tmp*
