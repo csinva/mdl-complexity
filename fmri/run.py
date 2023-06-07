@@ -27,7 +27,7 @@ import sys
 import scipy
 
 class RidgeBICRegressor():
-    def __init__(self, alpha_range=(0.1, 10.0), n_alphas=100, fit_intercept=True, normalize=False):
+    def __init__(self, alpha_range=(0.1, 10.0), n_alphas=10, fit_intercept=True, normalize=False):
         self.alpha_range = alpha_range
         self.n_alphas = n_alphas
         self.fit_intercept = fit_intercept
@@ -53,7 +53,7 @@ class RidgeBICRegressor():
             models.append(model)
             
             # key lines
-            n_feats = np.trace(X.T @  X) / (X.T @ X + alpha * np.eye(d) ) 
+            n_feats = np.trace(X @ npl.pinv(X.T @ X + alpha * np.eye(d)) @ X.T) 
             rss = np.sum((model.predict(X) - y) ** 2) / denom
             bic = n * np.log(rss / n) + n_feats * np.log(n)
             bic_scores.append(bic)
