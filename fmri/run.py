@@ -15,7 +15,7 @@ import h5py
 from scipy.io import loadmat
 from copy import deepcopy
 from skimage.filters import gabor_kernel
-from sklearn.linear_model import RidgeCV, ARDRegression
+from sklearn.linear_model import RidgeCV, ARDRegression, LinearRegression, Ridge
 sys.path.append('../lib/pymdlrs')
 from src.ulnml.least_square_regression import RidgeULNML
 import seaborn as sns
@@ -25,6 +25,45 @@ from scipy.optimize import minimize
 import random
 import sys
 import scipy
+
+class RidgeBICRegressor():
+    def __init__(self, alpha_range=(0.1, 10.0), n_alphas=100, fit_intercept=True, normalize=False):
+        self.alpha_range = alpha_range
+        self.n_alphas = n_alphas
+        self.fit_intercept = fit_intercept
+        self.normalize = normalize
+        self.alpha_ = None
+        self.model_ = None
+
+    def fit(self, X, y):
+        n, d = X.shape
+    
+        alpha_min, alpha_max = self.alpha_range
+        alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), self.n_alphas)
+    
+        bic_scores = []
+        models = []
+        
+        ols = LinearRegression()
+        denom = np.std(y - ols.fit(X, y).predict(X)) / (n - d)
+        
+        for alpha in alphas:
+            model = Ridge(alpha=alpha, fit_intercept=self.fit_intercept, normalize=self.normalize)
+            model.fit(X, y)
+            models.append(model)
+            
+            # key lines
+            n_feats = np.trace(X.T @  X) / (X.T @ X + alpha * np.eye(d) ) 
+            rss = np.sum((model.predict(X) - y) ** 2) / denom
+            bic = n * np.log(rss / n) + n_feats * np.log(n)
+            bic_scores.append(bic)
+    
+        best_model_index = np.argmin(bic_scores)
+        self.alpha_ = alphas[best_model_index]
+        self.model_ = models[best_model_index]
+    
+    def predict(self, X):
+        return self.model_.predict(X)
 
 def save_h5(data, fname):
     if os.path.exists(fname):
@@ -78,7 +117,8 @@ if __name__ == '__main__':
     use_sigmas = False
     use_small = False
     out_dir = '/scratch/users/vision/data/gallant/vim_2_crcns'
-    save_dir = oj(out_dir, 'dec14_baselines_ard')
+    # save_dir = oj(out_dir, 'dec14_baselines_ard')
+    save_dir = oj(out_dir, 'jun7_baselines_bic')
     suffix = '_feats' # _feats, '' for pixels
     norm = '_norm' # ''
     reg_params = np.logspace(3, 6, 20).round().astype(int) # reg values to try (must match preprocess_fmri)
@@ -152,7 +192,8 @@ if __name__ == '__main__':
         
         # fit ard + mdl-rs
         baselines = {}
-        for model_type, model_name in zip([ARDRegression], ['ard']):
+        for model_type, model_name in zip([RidgeBICRegressor], ['bic']):
+        # for model_type, model_name in zip([ARDRegression], ['ard']):
 #         for model_type, model_name in zip([ARDRegression, RidgeULNML], ['ard', 'mdl-rs']):
             print('\tfitting', model_name)
             model = model_type()
@@ -165,6 +206,7 @@ if __name__ == '__main__':
             baselines[f'{model_name}_r2'] = metrics.r2_score(y_test, preds)
             baselines[f'{model_name}_corr'] = np.corrcoef(y_test, preds)[0, 1]
             
+        """
         # fit ridge cv
         print('\tfitting ridgecv...')
         m = RidgeCV(alphas=reg_params, store_cv_values=True)
@@ -246,6 +288,19 @@ if __name__ == '__main__':
             'r2_test': r2,
             'corr_test': corr,
             **r,
+            **baselines,
+        }
+        """
+        results = {
+            'roi': roi,
+            # 'model': m,
+            # 'snr': snr,
+            # 'lambda_best':  m.alpha_,
+            'n_train': n_train,
+            'n_test': num_test,
+            'd': d,
+            # 'y_norm': y_norm,
+            'idx': i,
             **baselines,
         }
         pkl.dump(results, open(oj(save_dir, f'ridge_{i}.pkl'), 'wb'))
