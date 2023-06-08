@@ -23,13 +23,12 @@ from scipy.io import loadmat
 import numpy.linalg as npl
 from scipy.optimize import minimize
 import random
-import sys
-import scipy
 
 class RidgeBICRegressor():
-    def __init__(self, alpha_range=(0.1, 10.0), n_alphas=10, fit_intercept=True, normalize=False):
-        self.alpha_range = alpha_range
-        self.n_alphas = n_alphas
+    def __init__(self, fit_intercept=True, normalize=False):
+        # self.alpha_range = alpha_range
+        self.alphas = np.logspace(3, 6, 20).round().astype(int)
+        # self.n_alphas = n_alphas
         self.fit_intercept = fit_intercept
         self.normalize = normalize
         self.alpha_ = None
@@ -37,9 +36,8 @@ class RidgeBICRegressor():
 
     def fit(self, X, y):
         n, d = X.shape
-    
-        alpha_min, alpha_max = self.alpha_range
-        alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), self.n_alphas)
+        # alpha_min, alpha_max = self.alpha_range
+        # alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), self.n_alphas)
     
         bic_scores = []
         models = []
@@ -47,7 +45,7 @@ class RidgeBICRegressor():
         ols = LinearRegression()
         denom = np.std(y - ols.fit(X, y).predict(X)) / (n - d)
         
-        for alpha in alphas:
+        for alpha in tqdm(self.alphas):
             model = Ridge(alpha=alpha, fit_intercept=self.fit_intercept, normalize=self.normalize)
             model.fit(X, y)
             models.append(model)
@@ -59,7 +57,7 @@ class RidgeBICRegressor():
             bic_scores.append(bic)
     
         best_model_index = np.argmin(bic_scores)
-        self.alpha_ = alphas[best_model_index]
+        self.alpha_ = self.alphas[best_model_index]
         self.model_ = models[best_model_index]
     
     def predict(self, X):
@@ -110,7 +108,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         runs = [int(sys.argv[-1])]
     else:
-        runs = list(range(300)) # this number determines which neuron we will pick
+        runs = list(range(100)) # this number determines which neuron we will pick
     print('\nruns', runs)
     
     # fit linear models
@@ -170,6 +168,12 @@ if __name__ == '__main__':
         results = {}
         os.makedirs(save_dir, exist_ok=True)
         print('fitting', roi, 'idx', i)
+
+
+        # check for cached file
+        cached_fname = oj(save_dir, f'ridge_{i}.pkl')
+        if os.path.exists(cached_fname):
+            print('skipping', i)
 
         # select response for neuron i
         y_train = Y_train[i]
