@@ -25,20 +25,11 @@ from scipy.optimize import minimize
 import random
 
 class RidgeBICRegressor():
-    def __init__(self, fit_intercept=True, normalize=False):
-        # self.alpha_range = alpha_range
-        self.alphas = np.logspace(3, 6, 20).round().astype(int)
-        # self.n_alphas = n_alphas
-        self.fit_intercept = fit_intercept
-        self.normalize = normalize
-        self.alpha_ = None
-        self.model_ = None
+    def __init__(self):
+        self.alphas = np.logspace(-1, 1, 20).round()
 
     def fit(self, X, y):
         n, d = X.shape
-        # alpha_min, alpha_max = self.alpha_range
-        # alphas = np.logspace(np.log10(alpha_min), np.log10(alpha_max), self.n_alphas)
-    
         bic_scores = []
         models = []
         
@@ -46,12 +37,12 @@ class RidgeBICRegressor():
         denom = np.std(y - ols.fit(X, y).predict(X)) / (n - d)
         
         for alpha in tqdm(self.alphas):
-            model = Ridge(alpha=alpha, fit_intercept=self.fit_intercept, normalize=self.normalize)
+            model = Ridge(alpha=alpha, fit_intercept=False, normalize=False)
             model.fit(X, y)
             models.append(model)
             
             # key lines
-            n_feats = np.trace(X @ npl.pinv(X.T @ X + alpha * np.eye(d)) @ X.T) 
+            n_feats = np.trace(X @ npl.inv(X.T @ X + alpha * np.eye(d)) @ X.T) 
             rss = np.sum((model.predict(X) - y) ** 2) / denom
             bic = n * np.log(rss / n) + n_feats * np.log(n)
             bic_scores.append(bic)
