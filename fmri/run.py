@@ -26,7 +26,7 @@ import random
 
 class RidgeBICRegressor():
     def __init__(self):
-        self.alphas = np.logspace(-1, 1, 20).round()
+        self.alphas = np.logspace(-1, 3, 20).round()
 
     def fit(self, X, y):
         n, d = X.shape
@@ -165,6 +165,7 @@ if __name__ == '__main__':
         cached_fname = oj(save_dir, f'ridge_{i}.pkl')
         if os.path.exists(cached_fname):
             print('skipping', i)
+            exit(0)
 
         # select response for neuron i
         y_train = Y_train[i]
